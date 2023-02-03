@@ -5,13 +5,14 @@ TODO List:
 - Richardson Extrapolation
 - Embedded Runge-Kutta Formula
 """
+from __future__ import annotations
 
 from dataclasses import dataclass
 
 import numpy as np
 import matplotlib.pyplot as plt
 
-def euler_step(f, t, y, h):
+def euler_step(f: callable, t: float, y: np.ndarray, h: float):
     return y + h*f(t,y)
 
 @dataclass
@@ -19,7 +20,7 @@ class ODEResult:
     y: np.ndarray
     t: np.ndarray
 
-def solve_to(f, y0, tspan, h, method) -> ODEResult:
+def solve_to(f: callable, y0: np.ndarray, tspan: tuple[float, float], h: float, method: callable) -> ODEResult:
     t = [tspan[0]]
     y = [np.asarray(y0)]
     
