@@ -1,12 +1,3 @@
-"""
-TODO List:
-- Adaptive stepper
-- Dense Interpolation
-- Richardson Extrapolation
-- Embedded Runge-Kutta Formula
-- Warning if using fixed timesteps and step does not exactly divide time span
-- Transfer error plot to jupyter
-"""
 from __future__ import annotations
 
 from dataclasses import dataclass
