@@ -14,7 +14,8 @@ class TestSolveOde:
             integrate.solve_ode(lambda t, y, z: y, [0], [0, 1], "euler", 0.1)
 
     def test_invalid_method(self):
-        with pytest.raises(ValueError, match="cheddar cheese is not a valid option for 'method'"):
+        with pytest.raises(ValueError,
+                           match="cheddar cheese is not a valid option for 'method'"):
             integrate.solve_ode(dummy_ode, [0], (0, 1), h=0.1, method="cheddar cheese")
 
     def test_invalid_t_span(self):
