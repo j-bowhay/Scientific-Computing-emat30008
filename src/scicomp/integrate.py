@@ -36,7 +36,7 @@ def _solve_to_fixed_step(
         t.append(t[-1] + h)
         y.append(method(f, t[-1], y[-1], h))
 
-    return ODEResult(np.asarray(y), np.asarray(t))
+    return ODEResult(np.asarray(y).T, np.asarray(t))
 
 
 _fixed_step_methods = {"euler": _euler_step, "rk4": _rk4_step}
@@ -73,7 +73,7 @@ def solve_ode(
 
 if __name__ == "__main__":
     ode = lambda t, y: [y[1], -y[0]]
-    res = solve_ode(ode, [1, 0], [0, 1], 1e-3, "rk4")
+    res = solve_ode(ode, [1, 0], [0, 1], h=1e-3, method="rk4")
 
-    plt.plot(res.t, res.y[:, 0])
+    plt.plot(res.t, res.y[0, :])
     plt.show()
