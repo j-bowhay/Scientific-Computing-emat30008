@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import inspect
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -42,8 +43,16 @@ _fixed_step_methods = {"euler": _euler_step, "rk4": _rk4_step}
 
 
 def solve_ode(
-    f: callable, y0: np.ndarray, t_span: tuple[float, float], h: float, method: str
+    f: callable, y0: np.ndarray, t_span: tuple[float, float], method: str, h: float
 ) -> ODEResult:
+    if not callable(f):
+        raise ValueError("'f' must be callable")
+    else:
+        f_sig = inspect.signature(f)
+
+        if list(f_sig.parameters) != ["t", "y"]:
+            raise ValueError("'f' has an invalid signature")
+
     if len(t_span) != 2 or t_span[0] > t_span[1]:
         raise ValueError("Invalid values for 't_span'")
 
