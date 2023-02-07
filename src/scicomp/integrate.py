@@ -44,6 +44,9 @@ _fixed_step_methods = {"euler": euler_step, "rk4": rk4_step}
 def solve_ode(
     f: callable, y0: np.ndarray, t_span: tuple[float, float], h: float, method: str
 ) -> ODEResult:
+    if len(t_span) != 2 or t_span[0] > t_span[1]:
+        raise ValueError("Invalid values for 't_span'")
+
     # Incase ICs aren't already an array
     y0 = np.asarray(y0)
 
@@ -52,7 +55,9 @@ def solve_ode(
         return np.asarray(f(t, y))
 
     if method in _fixed_step_methods:
-        return _solve_to_fixed_step(f_wrapper, y0, t_span, h, _fixed_step_methods[method])
+        return _solve_to_fixed_step(
+            f_wrapper, y0, t_span, h, _fixed_step_methods[method]
+        )
     else:
         raise ValueError(f"{method} is not a valid option for 'method'")
 
@@ -60,6 +65,6 @@ def solve_ode(
 if __name__ == "__main__":
     ode = lambda t, y: [y[1], -y[0]]
     res = solve_ode(ode, [1, 0], [0, 1], 1e-3, "rk4")
-    
+
     plt.plot(res.t, res.y[:, 0])
     plt.show()
