@@ -6,11 +6,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def euler_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
+def _euler_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
     return y + h * f(t, y)
 
 
-def rk4_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
+def _rk4_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
     k1 = f(t, y)
     k2 = f(t + h / 2, y + h * k1 / 2)
     k3 = f(t + h / 2, y + h * k2 / 2)
@@ -38,7 +38,7 @@ def _solve_to_fixed_step(
     return ODEResult(np.asarray(y), np.asarray(t))
 
 
-_fixed_step_methods = {"euler": euler_step, "rk4": rk4_step}
+_fixed_step_methods = {"euler": _euler_step, "rk4": _rk4_step}
 
 
 def solve_ode(
