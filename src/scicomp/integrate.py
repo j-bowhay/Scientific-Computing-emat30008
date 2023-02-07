@@ -54,7 +54,7 @@ def solve_ode(
     if method in _fixed_step_methods:
         return _solve_to_fixed_step(f_wrapper, y0, t_span, h, _fixed_step_methods[method])
     else:
-        raise ValueError("Invalid Method.")
+        raise ValueError(f"{method} is not a valid option for 'method'")
 
 
 if __name__ == "__main__":
