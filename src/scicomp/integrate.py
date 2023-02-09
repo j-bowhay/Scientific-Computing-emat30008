@@ -41,9 +41,17 @@ def _solve_to_fixed_step(
 
 _fixed_step_methods = {"euler": _euler_step, "rk4": _rk4_step}
 
+_embedded_methods = {}
+
 
 def solve_ode(
-    f: callable, y0: np.ndarray, t_span: tuple[float, float], method: str, h: float
+    f: callable,
+    y0: np.ndarray,
+    t_span: tuple[float, float],
+    method: str,
+    h: float = None,
+    r_tol: float = 0,
+    a_tol: float = 0,
 ) -> ODEResult:
     if not callable(f):
         raise ValueError("'f' must be callable")
@@ -56,6 +64,12 @@ def solve_ode(
     if len(t_span) != 2 or t_span[0] > t_span[1]:
         raise ValueError("Invalid values for 't_span'")
 
+    if h is None and r_tol == 0 and a_tol == 0:
+        # If running in fixed step mode the user must provide the step size
+        raise ValueError(
+            "Step size must be provided if running in fixed step mode"
+        )  # TODO: write a test for this
+
     # Incase ICs aren't already an array
     y0 = np.asarray(y0)
 
@@ -63,10 +77,21 @@ def solve_ode(
     def f_wrapper(t, y):
         return np.asarray(f(t, y))
 
+    if h is None and (r_tol != 0 or a_tol != 0):
+        # compute initial step size
+        ...
+
     if method in _fixed_step_methods:
-        return _solve_to_fixed_step(
-            f_wrapper, y0, t_span, h, _fixed_step_methods[method]
-        )
+        if r_tol == 0 and a_tol == 0:
+            # run in fixed mode
+            return _solve_to_fixed_step(
+                f_wrapper, y0, t_span, h, _fixed_step_methods[method]
+            )
+        else:
+            # run in adaptive step mode
+            ...
+    elif method in _embedded_methods:
+        ...
     else:
         raise ValueError(f"{method} is not a valid option for 'method'")
 
