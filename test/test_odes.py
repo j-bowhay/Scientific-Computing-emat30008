@@ -1,6 +1,6 @@
-from scicomp.odes import zero_ode, exponential_ode
-
 import numpy as np
+from scicomp.odes import exponential_ode, zero_ode
+
 
 def test_zero_ode():
     rhs = zero_ode(np.nan, np.random.random((10,1)))

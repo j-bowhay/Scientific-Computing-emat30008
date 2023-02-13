@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def zero_ode(t: float, y: np.ndarray) -> np.ndarray:
     """An ODE RHS that always returns zeros.
     

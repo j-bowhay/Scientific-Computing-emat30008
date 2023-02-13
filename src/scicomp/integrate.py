@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import inspect
+from dataclasses import dataclass
 
 import numpy as np
-import matplotlib.pyplot as plt
 
 
 def _euler_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
@@ -94,11 +93,3 @@ def solve_ivp(
         ...
     else:
         raise ValueError(f"{method} is not a valid option for 'method'")
-
-
-if __name__ == "__main__":
-    ode = lambda t, y: [y[1], -y[0]]
-    res = solve_ivp(ode, [1, 0], [0, 1], h=1e-3, method="rk4")
-
-    plt.plot(res.t, res.y[0, :])
-    plt.show()
