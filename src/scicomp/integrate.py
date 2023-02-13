@@ -5,12 +5,52 @@ from dataclasses import dataclass
 
 import numpy as np
 
+# =====================================================================================
+# Step Routines
+# =====================================================================================
+
+# Standard Runge Kutta Type Steps
 
 def _euler_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
+    """Performs one step of the forward euler method
+
+    Parameters
+    ----------
+    f : callable
+        The function to integrate
+    t : float
+        Current time
+    y : np.ndarray
+        Current state
+    h : float
+        Step size
+
+    Returns
+    -------
+    np.ndarray
+        Solution after one step
+    """
     return y + h * f(t, y)
 
 
 def _rk4_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
+    """Performs one step of the fourth order Runge Kutta method.
+    Parameters
+    ----------
+    f : callable
+        The function to integrate
+    t : float
+        Current time
+    y : np.ndarray
+        Current state
+    h : float
+        Step size
+
+    Returns
+    -------
+    np.ndarray
+        Solution after one step
+    """
     k1 = f(t, y)
     k2 = f(t + h / 2, y + h * k1 / 2)
     k3 = f(t + h / 2, y + h * k2 / 2)
@@ -18,6 +58,12 @@ def _rk4_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
 
     return y + (1 / 6) * (k1 + 2 * k2 + 2 * k3 + k4) * h
 
+# Embedded Error Estimate Steps
+
+
+# =====================================================================================
+# Stepper Routines
+# =====================================================================================
 
 @dataclass
 class ODEResult:
@@ -28,7 +74,7 @@ class ODEResult:
 def _solve_to_fixed_step(
     f: callable, y0: np.ndarray, t_span: tuple[float, float], h: float, method: callable
 ) -> ODEResult:
-    t = [t_span[0]]
+    t = [t_span[0]]  # TODO: preallocate these
     y = [np.asarray(y0)]
 
     while t[-1] < t_span[-1]:
@@ -37,6 +83,9 @@ def _solve_to_fixed_step(
 
     return ODEResult(np.asarray(y).T, np.asarray(t))
 
+# =====================================================================================
+# Driver
+# =====================================================================================
 
 _fixed_step_methods = {"euler": _euler_step, "rk4": _rk4_step}
 
