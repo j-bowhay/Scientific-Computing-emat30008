@@ -1,13 +1,10 @@
 from scicomp import integrate
-from scicomp.odes import zero_ode
+from scicomp.odes import zero_ode, exponential_ode
 
 import pytest
 import numpy as np
 
 ALL_METHODS = pytest.mark.parametrize("method", integrate._fixed_step_methods.keys())
-
-def dummy_ode(t, y):
-    return y
 
 
 class TestSolveOde:
@@ -21,14 +18,14 @@ class TestSolveOde:
     def test_invalid_method(self):
         with pytest.raises(ValueError,
                            match="cheddar cheese is not a valid option for 'method'"):
-            integrate.solve_ivp(dummy_ode, [0], (0, 1), h=0.1, method="cheddar cheese")
+            integrate.solve_ivp(exponential_ode, [0], (0, 1), h=0.1, method="cheddar cheese")
 
     @ALL_METHODS
     def test_invalid_t_span(self, method):
         with pytest.raises(ValueError, match="Invalid values for 't_span'"):
-            integrate.solve_ivp(dummy_ode, [0], t_span=(1, 0), h=0.1, method=method)
+            integrate.solve_ivp(exponential_ode, [0], t_span=(1, 0), h=0.1, method=method)
         with pytest.raises(ValueError, match="Invalid values for 't_span'"):
-            integrate.solve_ivp(dummy_ode, [0], t_span=(0, 1, 2), h=0.1, method=method)
+            integrate.solve_ivp(exponential_ode, [0], t_span=(0, 1, 2), h=0.1, method=method)
 
     @ALL_METHODS
     def test_zero_ode(self, method):
