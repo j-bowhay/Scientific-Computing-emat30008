@@ -44,7 +44,7 @@ _fixed_step_methods = {"euler": _euler_step, "rk4": _rk4_step}
 _embedded_methods = {}
 
 
-def solve_ode(
+def solve_ivp(
     f: callable,
     y0: np.ndarray,
     t_span: tuple[float, float],
@@ -98,7 +98,7 @@ def solve_ode(
 
 if __name__ == "__main__":
     ode = lambda t, y: [y[1], -y[0]]
-    res = solve_ode(ode, [1, 0], [0, 1], h=1e-3, method="rk4")
+    res = solve_ivp(ode, [1, 0], [0, 1], h=1e-3, method="rk4")
 
     plt.plot(res.t, res.y[0, :])
     plt.show()
