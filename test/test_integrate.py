@@ -1,4 +1,5 @@
 from scicomp import integrate
+from scicomp.odes import zero_ode
 
 import pytest
 import numpy as np
@@ -7,10 +8,6 @@ ALL_METHODS = pytest.mark.parametrize("method", integrate._fixed_step_methods.ke
 
 def dummy_ode(t, y):
     return y
-
-
-def zero_ode(t, y):
-    return np.zeros_like(y)
 
 
 class TestSolveOde:
