@@ -1,5 +1,5 @@
 import numpy as np
-from scicomp.odes import exponential_ode, zero_ode
+from scicomp.odes import exponential_ode, shm_ode, zero_ode
 
 
 def test_zero_ode():
@@ -13,3 +13,8 @@ def test_exponential_ode():
     rhs = exponential_ode(np.nan , y)
     assert rhs.shape == (10,1)
     np.testing.assert_array_equal(rhs, y)
+
+def test_shm_ode():
+    y = np.random.random((10,1))
+    rhs = shm_ode(np.nan, y, 5)
+    np.testing.assert_array_equal(rhs, [y[1], -25 * y[0]])

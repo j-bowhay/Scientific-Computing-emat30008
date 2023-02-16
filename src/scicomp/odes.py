@@ -22,7 +22,7 @@ def zero_ode(t: float, y: np.ndarray) -> np.ndarray:
 
 
 def exponential_ode(t: float, y: np.ndarray) -> np.ndarray:
-    """An ode rsh which is equal to the current state.
+    """An ODE RHS which is equal to the current state.
     
     `` y' = y``
 
@@ -39,3 +39,22 @@ def exponential_ode(t: float, y: np.ndarray) -> np.ndarray:
         Returns `y`
     """
     return y
+
+def shm_ode(t: float, y: np.ndarray, omega: float) -> np.ndarray:
+    """An ODE RSH for simple harmonic motion with period `omega`.
+
+    Parameters
+    ----------
+    t : float
+        _description_
+    y : np.ndarray
+        _description_
+    omega : float
+        _description_
+
+    Returns
+    -------
+    np.ndarray
+        _description_
+    """
+    return [y[1], -omega**2 * y[0]]

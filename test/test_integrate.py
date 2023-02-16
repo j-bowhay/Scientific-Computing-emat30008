@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 from scicomp import integrate
-from scicomp.odes import exponential_ode, zero_ode
+from scicomp.odes import exponential_ode, shm_ode, zero_ode
 
 ALL_METHODS = pytest.mark.parametrize("method", integrate._fixed_step_methods.keys())
 FIXED_STEP_METHODS = pytest.mark.parametrize("method",
@@ -54,3 +54,14 @@ class TestSolveOde:
         res = integrate.solve_ivp(zero_ode, np.ones(10), (0, 5), method=method, h=1e-1)
         diff = np.diff(res.t)[:-1]
         np.testing.assert_allclose(diff, np.broadcast_to(1e-1, diff.shape))
+    
+    @FIXED_STEP_METHODS
+    def test_fixed_step_exponetial_solution(self, method):
+        res = integrate.solve_ivp(exponential_ode, [1], (0, 0.5), method=method, h=1e-6)
+        np.testing.assert_allclose(res.y[0,-1], np.exp(0.5), rtol=1e-6)
+    
+    @FIXED_STEP_METHODS
+    def test_fixed_step_shm(self, method):
+        res = integrate.solve_ivp(lambda t, y: shm_ode(t, y, 1), [1, 0], (0, 0.5),
+                                  method=method, h=1e-6)
+        np.testing.assert_allclose(res.y[:,-1], [np.cos(0.5), -np.sin(0.5)], rtol=1e-6)
