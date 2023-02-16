@@ -12,9 +12,9 @@ class TestSolveOde:
     @ALL_METHODS
     def test_invalid_signature(self, method):
         with pytest.raises(ValueError, match="'f' must be callable"):
-            integrate.solve_ivp("ode", [0], [0, 1], method, 0.1)
+            integrate.solve_ivp("ode", [0], [0, 1], method=method, h=0.1)
         with pytest.raises(ValueError, match="'f' has an invalid signature"):
-            integrate.solve_ivp(lambda t, y, z: y, [0], [0, 1], method, 0.1)
+            integrate.solve_ivp(lambda t, y, z: y, [0], [0, 1], method=method, h=0.1)
 
     def test_invalid_method(self):
         with pytest.raises(ValueError,
@@ -30,6 +30,13 @@ class TestSolveOde:
         with pytest.raises(ValueError, match="Invalid values for 't_span'"):
             integrate.solve_ivp(exponential_ode, [0], t_span=(0, 1, 2), h=0.1,
                                 method=method)
+    
+    @ALL_METHODS
+    def test_invalid_ics(self, method):
+        with pytest.raises(ValueError, 
+                           match="Initial conditions must be 1 dimensional."):
+            integrate.solve_ivp(exponential_ode, np.array([[1, 1], [1, 2]]),
+                                (0, 1), method="rk4", h=1)
 
     @ALL_METHODS
     def test_zero_ode(self, method):

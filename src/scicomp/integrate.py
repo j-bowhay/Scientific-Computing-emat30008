@@ -101,6 +101,7 @@ def solve_ivp(
     f: callable,
     y0: np.ndarray,
     t_span: tuple[float, float],
+    *,
     method: str,
     h: float = None,
     r_tol: float = 0,
@@ -125,6 +126,9 @@ def solve_ivp(
 
     # Incase ICs aren't already an array
     y0 = np.asarray(y0)
+
+    if y0.ndim != 1:
+        raise ValueError("Initial conditions must be 1 dimensional.")
 
     # wrap the function given by the user so we know it returns an array
     def f_wrapper(t, y):
