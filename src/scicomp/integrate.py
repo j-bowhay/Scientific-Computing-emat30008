@@ -74,10 +74,15 @@ class ODEResult:
 def _solve_to_fixed_step(
     f: callable, y0: np.ndarray, t_span: tuple[float, float], h: float, method: callable
 ) -> ODEResult:
-    t = [t_span[0]]  # TODO: preallocate these
+    t = [t_span[0]]
     y = [np.asarray(y0)]
 
-    while t[-1] < t_span[-1]:
+    # Check if integration is finished
+    while (t[-1] - t_span[-1]) < 0:
+        print(t[-1] - t_span[-1])
+        # check if the step is going to overshoot and adjust accordingly
+        if (t[-1] + h - t_span[-1]) > 0:
+            h = t_span[-1] - t[-1]
         t.append(t[-1] + h)
         y.append(method(f, t[-1], y[-1], h))
 

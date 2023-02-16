@@ -4,6 +4,8 @@ from scicomp import integrate
 from scicomp.odes import exponential_ode, zero_ode
 
 ALL_METHODS = pytest.mark.parametrize("method", integrate._fixed_step_methods.keys())
+FIXED_STEP_METHODS = pytest.mark.parametrize("method",
+                                             integrate._fixed_step_methods.keys())
 
 
 class TestSolveOde:
@@ -33,3 +35,15 @@ class TestSolveOde:
     def test_zero_ode(self, method):
         res = integrate.solve_ivp(zero_ode, np.ones(10), [0, 5], method=method, h=1e-1)
         assert np.array_equal(res.y, np.ones((10, res.t.size)))
+
+    @FIXED_STEP_METHODS
+    def test_t_span_obeyed_fixed_step(self, method):
+        t_span = (2, 5.432)
+        res = integrate.solve_ivp(zero_ode, np.ones(10), t_span, method=method, h=1e-1)
+        np.testing.assert_allclose(t_span, (res.t[0], res.t[-1]))
+    
+    @FIXED_STEP_METHODS
+    def test_fixed_steps_taken(self, method):
+        res = integrate.solve_ivp(zero_ode, np.ones(10), (0, 5), method=method, h=1e-1)
+        diff = np.diff(res.t)[:-1]
+        np.testing.assert_allclose(diff, np.broadcast_to(1e-1, diff.shape))
