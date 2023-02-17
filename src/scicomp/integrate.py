@@ -25,7 +25,9 @@ def _butcher_tableau_step(
 
     ks = np.empty((y.size, s))
     for i in range(s):
-        ks[:, i] = f(t + C[i] * h, y + h * np.sum(A[i, : i + 1] * ks[: i + 1], axis=-1))
+        ks[:, i] = f(t + C[i] * h,
+                     y + h * np.sum(A[i, np.newaxis, : i + 1] * ks[:, : i + 1],
+                                    axis=-1))
 
     return y + h * np.sum(B * ks, axis=-1)
 
@@ -72,12 +74,13 @@ def _rk4_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
     np.ndarray
         Solution after one step
     """
-    k1 = f(t, y)
-    k2 = f(t + h / 2, y + h * k1 / 2)
-    k3 = f(t + h / 2, y + h * k2 / 2)
-    k4 = f(t + h, y + h * k3)
-
-    return y + (1 / 6) * (k1 + 2 * k2 + 2 * k3 + k4) * h
+    A =np.array([[0, 0, 0, 0],
+                 [0.5, 0, 0, 0],
+                 [0, 0.5, 0, 0],
+                 [0, 0, 1, 0]])
+    B = np.array([1/6, 1/3, 1/3, 1/6])
+    C = np.array([0, 0.5, 0.5, 1])
+    return _butcher_tableau_step(f, t, y, h, A, B, C)
 
 # Embedded Error Estimate Steps
 
