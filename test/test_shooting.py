@@ -1,7 +1,7 @@
-from scicomp.odes import hopf_normal
-from scicomp.shooting import find_limit_cycle#
-
 import numpy as np
+from scicomp.odes import hopf_normal
+from scicomp.shooting import find_limit_cycle 
+
 
 class TestFindLimitCycle:
     def test_find_hopf_period(self):
