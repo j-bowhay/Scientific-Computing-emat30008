@@ -56,6 +56,15 @@ def _euler_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
     return _butcher_tableau_step(f, t, y, h, A, B, C)
 
 
+def _explicit_midpoint_step(f: callable, t: float,
+                            y: np.ndarray, h: float) -> np.ndarray:
+    A = np.array([[0, 0],
+                 [0.5, 0]])
+    B = np.array([0, 1])
+    C = np.array([0, 0.5])
+    return _butcher_tableau_step(f, t, y, h, A, B, C)
+
+
 def _rk4_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
     """Performs one step of the fourth order Runge Kutta method.
     Parameters
@@ -115,7 +124,9 @@ def _solve_to_fixed_step(
 # Driver
 # =====================================================================================
 
-_fixed_step_methods = {"euler": _euler_step, "rk4": _rk4_step}
+_fixed_step_methods = {"euler": _euler_step,
+                       "midpoint": _explicit_midpoint_step,
+                       "rk4": _rk4_step}
 
 _embedded_methods = {}
 
