@@ -175,7 +175,7 @@ def _ralston4_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray
                  [.4, 0, 0, 0],
                  [.29697761, .15875964, 0, 0],
                  [.21810040, -3.050965161, 3.83286476, 0]])
-    B = np.array([.17476028, .55148066, 1.20553560, .17118478])
+    B = np.array([.17476028, -.55148066, 1.20553560, .17118478])
     C = np.array([0, .4, .45573725, 1])
     return _butcher_tableau_step(f, t, y, h, A, B, C)
 
