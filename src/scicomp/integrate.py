@@ -59,9 +59,77 @@ def _euler_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
 def _explicit_midpoint_step(f: callable, t: float,
                             y: np.ndarray, h: float) -> np.ndarray:
     A = np.array([[0, 0],
-                 [0.5, 0]])
+                  [0.5, 0]])
     B = np.array([0, 1])
     C = np.array([0, 0.5])
+    return _butcher_tableau_step(f, t, y, h, A, B, C)
+
+
+def _heuns_step(f: callable, t: float,
+                            y: np.ndarray, h: float) -> np.ndarray:
+    A = np.array([[0, 0],
+                  [1, 0]])
+    B = np.array([0.5, 0.5])
+    C = np.array([0, 1])
+    return _butcher_tableau_step(f, t, y, h, A, B, C)
+
+
+def _ralston_step(f: callable, t: float,
+                            y: np.ndarray, h: float) -> np.ndarray:
+    A = np.array([[0, 0],
+                  [2/3, 0]])
+    B = np.array([1/4, 3/4])
+    C = np.array([0, 2/3])
+    return _butcher_tableau_step(f, t, y, h, A, B, C)
+
+
+def _kutta3_step(f: callable, t: float,
+                            y: np.ndarray, h: float) -> np.ndarray:
+    A = np.array([[0, 0, 0],
+                  [1/2, 0, 0],
+                  [-1, 2, 0]])
+    B = np.array([1/6, 2/3, 1/6])
+    C = np.array([0, 1/2, 1])
+    return _butcher_tableau_step(f, t, y, h, A, B, C)
+
+
+def _heun3_step(f: callable, t: float,
+                            y: np.ndarray, h: float) -> np.ndarray:
+    A = np.array([[0, 0, 0],
+                  [1/3, 0, 0],
+                  [0, 2/3, 0]])
+    B = np.array([1/4, 0, 3/4])
+    C = np.array([0, 1/3, 2/3])
+    return _butcher_tableau_step(f, t, y, h, A, B, C)
+
+
+def _wray3_step(f: callable, t: float,
+                            y: np.ndarray, h: float) -> np.ndarray:
+    A = np.array([[0, 0, 0],
+                  [8/15, 0, 0],
+                  [1/4, 5/12, 0]])
+    B = np.array([1/4, 0, 3/4])
+    C = np.array([0, 8/15, 2/3])
+    return _butcher_tableau_step(f, t, y, h, A, B, C)
+
+
+def _ralston3_step(f: callable, t: float,
+                            y: np.ndarray, h: float) -> np.ndarray:
+    A = np.array([[0, 0, 0],
+                  [1/2, 0, 0],
+                  [0, 3/4, 0]])
+    B = np.array([2/9, 1/3, 4/9])
+    C = np.array([0, 1/2, 3/4])
+    return _butcher_tableau_step(f, t, y, h, A, B, C)
+
+
+def _SSPRK3_step(f: callable, t: float,
+                            y: np.ndarray, h: float) -> np.ndarray:
+    A = np.array([[0, 0, 0],
+                  [1, 0, 0],
+                  [1/4, 1/4, 0]])
+    B = np.array([1/6, 1/6, 2/3])
+    C = np.array([0, 1, 1/2])
     return _butcher_tableau_step(f, t, y, h, A, B, C)
 
 
@@ -89,6 +157,16 @@ def _rk4_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
                  [0, 0, 1, 0]])
     B = np.array([1/6, 1/3, 1/3, 1/6])
     C = np.array([0, 0.5, 0.5, 1])
+    return _butcher_tableau_step(f, t, y, h, A, B, C)
+
+
+def _rk38_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
+    A =np.array([[0, 0, 0, 0],
+                 [1/3, 0, 0, 0],
+                 [-1/3, 1, 0, 0],
+                 [1, -1, 1, 0]])
+    B = np.array([1/8, 3/8, 3/8, 1/8])
+    C = np.array([0, 1/3, 2/3, 1])
     return _butcher_tableau_step(f, t, y, h, A, B, C)
 
 # Embedded Error Estimate Steps
@@ -126,7 +204,15 @@ def _solve_to_fixed_step(
 
 _fixed_step_methods = {"euler": _euler_step,
                        "midpoint": _explicit_midpoint_step,
-                       "rk4": _rk4_step}
+                       "heun": _heuns_step,
+                       "ralston": _ralston_step,
+                       "kutta2": _kutta3_step,
+                       "heun3": _heun3_step,
+                       "wray3": _wray3_step,
+                       "ralston3": _ralston3_step,
+                       "ssprk3": _SSPRK3_step,
+                       "rk4": _rk4_step,
+                       "rk38": _rk38_step}
 
 _embedded_methods = {}
 
