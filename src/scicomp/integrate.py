@@ -169,6 +169,16 @@ def _rk38_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
     C = np.array([0, 1/3, 2/3, 1])
     return _butcher_tableau_step(f, t, y, h, A, B, C)
 
+
+def _ralston4_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
+    A =np.array([[0, 0, 0, 0],
+                 [.4, 0, 0, 0],
+                 [.29697761, .15875964, 0, 0],
+                 [.21810040, -3.050965161, 3.83286476, 0]])
+    B = np.array([.17476028, .55148066, 1.20553560, .17118478])
+    C = np.array([0, .4, .45573725, 1])
+    return _butcher_tableau_step(f, t, y, h, A, B, C)
+
 # Embedded Error Estimate Steps
 
 
@@ -212,7 +222,8 @@ _fixed_step_methods = {"euler": _euler_step,
                        "ralston3": _ralston3_step,
                        "ssprk3": _SSPRK3_step,
                        "rk4": _rk4_step,
-                       "rk38": _rk38_step}
+                       "rk38": _rk38_step,
+                       "ralston4": _ralston4_step}
 
 _embedded_methods = {}
 

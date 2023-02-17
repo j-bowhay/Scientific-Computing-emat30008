@@ -1,6 +1,6 @@
 import numpy as np
 from scicomp.odes import hopf_normal
-from scicomp.shooting import find_limit_cycle 
+from scicomp.shooting import find_limit_cycle
 
 
 class TestFindLimitCycle:
