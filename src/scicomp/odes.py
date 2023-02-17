@@ -64,5 +64,5 @@ def hopf_normal(t: float, y: np.ndarray, beta: float, rho: float) -> np.ndarray:
             y[0] + beta*y[1] + rho*y[1]*(y[0]**2 + y[1]**2)]
 
 def predator_prey(t: float, y: np.ndarray, a: float, b: float, d: float) -> np.ndarray:
-    return [y[0] * (1 - y[0]) - (a * y[0], * y[1])/(d + y[0]),
+    return [y[0] * (1 - y[0]) - (a * y[0] * y[1])/(d + y[0]),
             b*y[1]*(1 - y[1]/y[0])]

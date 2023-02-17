@@ -8,4 +8,4 @@ def find_limit_cycle(ode: callable, x0: np.ndarray) -> np.ndarray:
         condition_2 = ode(np.nan, x[:2])[0]
         return [*condition_1, condition_2]
     
-    return scipy.optimize.root(condition, x0)
+    return scipy.optimize.root(condition, x0).x
