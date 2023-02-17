@@ -58,3 +58,7 @@ def shm_ode(t: float, y: np.ndarray, omega: float) -> np.ndarray:
         _description_
     """
     return [y[1], -omega**2 * y[0]]
+
+def hopf_normal(t: float, y: np.ndarray, beta: float, rho: float):
+    return [beta*y[0] - y[1] + rho*y[0]*(y[0]**2 + y[1]**2),
+            y[0] + beta*y[1] + rho*y[1]*(y[0]**2 + y[1]**2)]
