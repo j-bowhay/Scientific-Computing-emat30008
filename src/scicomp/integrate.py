@@ -11,6 +11,24 @@ import numpy as np
 
 # Standard Runge Kutta Type Steps
 
+
+def _butcher_tableau_step(
+    f: callable,
+    t: float,
+    y: np.ndarray,
+    h: float,
+    A: np.ndarray,
+    B: np.ndarray,
+    C: np.ndarray,
+) -> np.ndarray:
+    s = B.size
+
+    ks = np.empty((y.size, s))
+    for i in range(s):
+        ks[:, i] = f(t + C[i] * h, y + h * np.sum(A[i, : i + 1] * ks[: i + 1], axis=-1))
+
+    return y + h * np.sum(B * ks, axis=-1)
+
 def _euler_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
     """Performs one step of the forward euler method
 
@@ -30,7 +48,10 @@ def _euler_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
     np.ndarray
         Solution after one step
     """
-    return y + h * f(t, y)
+    A = np.array([[0]])
+    B = np.array([1])
+    C = np.array([0])
+    return _butcher_tableau_step(f, t, y, h, A, B, C)
 
 
 def _rk4_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
@@ -79,7 +100,6 @@ def _solve_to_fixed_step(
 
     # Check if integration is finished
     while (t[-1] - t_span[-1]) < 0:
-        print(t[-1] - t_span[-1])
         # check if the step is going to overshoot and adjust accordingly
         if (t[-1] + h - t_span[-1]) > 0:
             h = t_span[-1] - t[-1]
