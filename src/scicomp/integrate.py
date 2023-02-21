@@ -143,7 +143,7 @@ class _Ralston4Step(_RungeKuttaStep):
 # =====================================================================================
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class ODEResult:
     y: np.ndarray
     t: np.ndarray
