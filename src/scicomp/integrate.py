@@ -12,153 +12,127 @@ import numpy as np
 # Standard Runge Kutta Type Steps
 
 
-def _butcher_tableau_step(
-    f: callable,
-    t: float,
-    y: np.ndarray,
-    h: float,
-    A: np.ndarray,
-    B: np.ndarray,
-    C: np.ndarray,
-) -> np.ndarray:
-    s = B.size
+class _RungeKuttaStep:
+    __slots__ = "A", "B", "C", "s"
 
-    ks = np.empty((y.size, s))
-    for i in range(s):
-        ks[:, i] = f(
-            t + C[i] * h,
-            y + h * np.sum(A[i, np.newaxis, : i + 1] * ks[:, : i + 1], axis=-1),
+    def __init__(self) -> None:
+        self.s = self.B.size
+
+    def __call__(self, f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
+        ks = np.empty((y.size, self.s))
+        for i in range(self.s):
+            ks[:, i] = f(
+                t + self.C[i] * h,
+                y
+                + h * np.sum(self.A[i, np.newaxis, : i + 1] * ks[:, : i + 1], axis=-1),
+            )
+
+        return y + h * np.sum(self.B * ks, axis=-1)
+
+
+class _EulerStep(_RungeKuttaStep):
+    def __init__(self) -> None:
+        self.A = np.array([[0]])
+        self.B = np.array([1])
+        self.C = np.array([0])
+        super().__init__()
+
+
+class _ExplicitMidpointStep(_RungeKuttaStep):
+    def __init__(self) -> None:
+        self.A = np.array([[0, 0], [0.5, 0]])
+        self.B = np.array([0, 1])
+        self.C = np.array([0, 0.5])
+        super().__init__()
+
+
+class _HeunsStep(_RungeKuttaStep):
+    def __init__(self) -> None:
+        self.A = np.array([[0, 0], [1, 0]])
+        self.B = np.array([0.5, 0.5])
+        self.C = np.array([0, 1])
+        super().__init__()
+
+
+class _RalstonStep(_RungeKuttaStep):
+    def __init__(self) -> None:
+        self.A = np.array([[0, 0], [2 / 3, 0]])
+        self.B = np.array([1 / 4, 3 / 4])
+        self.C = np.array([0, 2 / 3])
+        super().__init__()
+
+
+class _Kutta3Step(_RungeKuttaStep):
+    def __init__(self) -> None:
+        self.A = np.array([[0, 0, 0], [1 / 2, 0, 0], [-1, 2, 0]])
+        self.B = np.array([1 / 6, 2 / 3, 1 / 6])
+        self.C = np.array([0, 1 / 2, 1])
+        super().__init__()
+
+
+class _Heun3Step(_RungeKuttaStep):
+    def __init__(self) -> None:
+        self.A = np.array([[0, 0, 0], [1 / 3, 0, 0], [0, 2 / 3, 0]])
+        self.B = np.array([1 / 4, 0, 3 / 4])
+        self.C = np.array([0, 1 / 3, 2 / 3])
+        super().__init__()
+
+
+class _Wray3Step(_RungeKuttaStep):
+    def __init__(self) -> None:
+        self.A = np.array([[0, 0, 0], [8 / 15, 0, 0], [1 / 4, 5 / 12, 0]])
+        self.B = np.array([1 / 4, 0, 3 / 4])
+        self.C = np.array([0, 8 / 15, 2 / 3])
+        super().__init__()
+
+
+class _Ralston3Step(_RungeKuttaStep):
+    def __init__(self) -> None:
+        self.A = np.array([[0, 0, 0], [1 / 2, 0, 0], [0, 3 / 4, 0]])
+        self.B = np.array([2 / 9, 1 / 3, 4 / 9])
+        self.C = np.array([0, 1 / 2, 3 / 4])
+        super().__init__()
+
+
+class _SSPRK3Step(_RungeKuttaStep):
+    def __init__(self) -> None:
+        self.A = np.array([[0, 0, 0], [1, 0, 0], [1 / 4, 1 / 4, 0]])
+        self.B = np.array([1 / 6, 1 / 6, 2 / 3])
+        self.C = np.array([0, 1, 1 / 2])
+        super().__init__()
+
+
+class _RK4Step(_RungeKuttaStep):
+    def __init__(self) -> None:
+        self.A = np.array([[0, 0, 0, 0], [0.5, 0, 0, 0], [0, 0.5, 0, 0], [0, 0, 1, 0]])
+        self.B = np.array([1 / 6, 1 / 3, 1 / 3, 1 / 6])
+        self.C = np.array([0, 0.5, 0.5, 1])
+        super().__init__()
+
+
+class _RK38Step(_RungeKuttaStep):
+    def __init__(self) -> None:
+        self.A = np.array(
+            [[0, 0, 0, 0], [1 / 3, 0, 0, 0], [-1 / 3, 1, 0, 0], [1, -1, 1, 0]]
         )
-
-    return y + h * np.sum(B * ks, axis=-1)
-
-
-def _euler_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
-    """Performs one step of the forward euler method
-
-    Parameters
-    ----------
-    f : callable
-        The function to integrate
-    t : float
-        Current time
-    y : np.ndarray
-        Current state
-    h : float
-        Step size
-
-    Returns
-    -------
-    np.ndarray
-        Solution after one step
-    """
-    A = np.array([[0]])
-    B = np.array([1])
-    C = np.array([0])
-    return _butcher_tableau_step(f, t, y, h, A, B, C)
+        self.B = np.array([1 / 8, 3 / 8, 3 / 8, 1 / 8])
+        self.C = np.array([0, 1 / 3, 2 / 3, 1])
+        super().__init__()
 
 
-def _explicit_midpoint_step(
-    f: callable, t: float, y: np.ndarray, h: float
-) -> np.ndarray:
-    A = np.array([[0, 0], [0.5, 0]])
-    B = np.array([0, 1])
-    C = np.array([0, 0.5])
-    return _butcher_tableau_step(f, t, y, h, A, B, C)
-
-
-def _heuns_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
-    A = np.array([[0, 0], [1, 0]])
-    B = np.array([0.5, 0.5])
-    C = np.array([0, 1])
-    return _butcher_tableau_step(f, t, y, h, A, B, C)
-
-
-def _ralston_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
-    A = np.array([[0, 0], [2 / 3, 0]])
-    B = np.array([1 / 4, 3 / 4])
-    C = np.array([0, 2 / 3])
-    return _butcher_tableau_step(f, t, y, h, A, B, C)
-
-
-def _kutta3_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
-    A = np.array([[0, 0, 0], [1 / 2, 0, 0], [-1, 2, 0]])
-    B = np.array([1 / 6, 2 / 3, 1 / 6])
-    C = np.array([0, 1 / 2, 1])
-    return _butcher_tableau_step(f, t, y, h, A, B, C)
-
-
-def _heun3_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
-    A = np.array([[0, 0, 0], [1 / 3, 0, 0], [0, 2 / 3, 0]])
-    B = np.array([1 / 4, 0, 3 / 4])
-    C = np.array([0, 1 / 3, 2 / 3])
-    return _butcher_tableau_step(f, t, y, h, A, B, C)
-
-
-def _wray3_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
-    A = np.array([[0, 0, 0], [8 / 15, 0, 0], [1 / 4, 5 / 12, 0]])
-    B = np.array([1 / 4, 0, 3 / 4])
-    C = np.array([0, 8 / 15, 2 / 3])
-    return _butcher_tableau_step(f, t, y, h, A, B, C)
-
-
-def _ralston3_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
-    A = np.array([[0, 0, 0], [1 / 2, 0, 0], [0, 3 / 4, 0]])
-    B = np.array([2 / 9, 1 / 3, 4 / 9])
-    C = np.array([0, 1 / 2, 3 / 4])
-    return _butcher_tableau_step(f, t, y, h, A, B, C)
-
-
-def _SSPRK3_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
-    A = np.array([[0, 0, 0], [1, 0, 0], [1 / 4, 1 / 4, 0]])
-    B = np.array([1 / 6, 1 / 6, 2 / 3])
-    C = np.array([0, 1, 1 / 2])
-    return _butcher_tableau_step(f, t, y, h, A, B, C)
-
-
-def _rk4_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
-    """Performs one step of the fourth order Runge Kutta method.
-    Parameters
-    ----------
-    f : callable
-        The function to integrate
-    t : float
-        Current time
-    y : np.ndarray
-        Current state
-    h : float
-        Step size
-
-    Returns
-    -------
-    np.ndarray
-        Solution after one step
-    """
-    A = np.array([[0, 0, 0, 0], [0.5, 0, 0, 0], [0, 0.5, 0, 0], [0, 0, 1, 0]])
-    B = np.array([1 / 6, 1 / 3, 1 / 3, 1 / 6])
-    C = np.array([0, 0.5, 0.5, 1])
-    return _butcher_tableau_step(f, t, y, h, A, B, C)
-
-
-def _rk38_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
-    A = np.array([[0, 0, 0, 0], [1 / 3, 0, 0, 0], [-1 / 3, 1, 0, 0], [1, -1, 1, 0]])
-    B = np.array([1 / 8, 3 / 8, 3 / 8, 1 / 8])
-    C = np.array([0, 1 / 3, 2 / 3, 1])
-    return _butcher_tableau_step(f, t, y, h, A, B, C)
-
-
-def _ralston4_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
-    A = np.array(
-        [
-            [0, 0, 0, 0],
-            [0.4, 0, 0, 0],
-            [0.29697761, 0.15875964, 0, 0],
-            [0.21810040, -3.050965161, 3.83286476, 0],
-        ]
-    )
-    B = np.array([0.17476028, -0.55148066, 1.20553560, 0.17118478])
-    C = np.array([0, 0.4, 0.45573725, 1])
-    return _butcher_tableau_step(f, t, y, h, A, B, C)
+class _Ralston4Step(_RungeKuttaStep):
+    def __init__(self) -> None:
+        self.A = np.array(
+            [
+                [0, 0, 0, 0],
+                [0.4, 0, 0, 0],
+                [0.29697761, 0.15875964, 0, 0],
+                [0.21810040, -3.050965161, 3.83286476, 0],
+            ]
+        )
+        self.B = np.array([0.17476028, -0.55148066, 1.20553560, 0.17118478])
+        self.C = np.array([0, 0.4, 0.45573725, 1])
+        super().__init__()
 
 
 # Embedded Error Estimate Steps
@@ -197,18 +171,18 @@ def _solve_to_fixed_step(
 # =====================================================================================
 
 _fixed_step_methods = {
-    "euler": _euler_step,
-    "midpoint": _explicit_midpoint_step,
-    "heun": _heuns_step,
-    "ralston": _ralston_step,
-    "kutta2": _kutta3_step,
-    "heun3": _heun3_step,
-    "wray3": _wray3_step,
-    "ralston3": _ralston3_step,
-    "ssprk3": _SSPRK3_step,
-    "rk4": _rk4_step,
-    "rk38": _rk38_step,
-    "ralston4": _ralston4_step,
+    "euler": _EulerStep,
+    "midpoint": _ExplicitMidpointStep,
+    "heun": _HeunsStep,
+    "ralston": _RalstonStep,
+    "kutta2": _Kutta3Step,
+    "heun3": _Heun3Step,
+    "wray3": _Wray3Step,
+    "ralston3": _Ralston3Step,
+    "ssprk3": _SSPRK3Step,
+    "rk4": _RK4Step,
+    "rk38": _RK38Step,
+    "ralston4": _Ralston4Step,
 }
 
 _embedded_methods = {}
@@ -256,11 +230,10 @@ def solve_ivp(
         ...
 
     if method in _fixed_step_methods:
+        method = _fixed_step_methods[method]()
         if r_tol == 0 and a_tol == 0:
             # run in fixed mode
-            return _solve_to_fixed_step(
-                f_wrapper, y0, t_span, h, _fixed_step_methods[method]
-            )
+            return _solve_to_fixed_step(f_wrapper, y0, t_span, h, method)
         else:
             # run in adaptive step mode
             ...
