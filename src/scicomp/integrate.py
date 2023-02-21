@@ -35,6 +35,7 @@ class _EulerStep(_RungeKuttaStep):
         self.A = np.array([[0]])
         self.B = np.array([1])
         self.C = np.array([0])
+        self.order = 1
         super().__init__()
 
 
@@ -43,6 +44,7 @@ class _ExplicitMidpointStep(_RungeKuttaStep):
         self.A = np.array([[0, 0], [0.5, 0]])
         self.B = np.array([0, 1])
         self.C = np.array([0, 0.5])
+        self.order = 2
         super().__init__()
 
 
@@ -51,6 +53,7 @@ class _HeunsStep(_RungeKuttaStep):
         self.A = np.array([[0, 0], [1, 0]])
         self.B = np.array([0.5, 0.5])
         self.C = np.array([0, 1])
+        self.order = 2
         super().__init__()
 
 
@@ -59,6 +62,7 @@ class _RalstonStep(_RungeKuttaStep):
         self.A = np.array([[0, 0], [2 / 3, 0]])
         self.B = np.array([1 / 4, 3 / 4])
         self.C = np.array([0, 2 / 3])
+        self.order = 2
         super().__init__()
 
 
@@ -67,6 +71,7 @@ class _Kutta3Step(_RungeKuttaStep):
         self.A = np.array([[0, 0, 0], [1 / 2, 0, 0], [-1, 2, 0]])
         self.B = np.array([1 / 6, 2 / 3, 1 / 6])
         self.C = np.array([0, 1 / 2, 1])
+        self.order = 3
         super().__init__()
 
 
@@ -75,6 +80,7 @@ class _Heun3Step(_RungeKuttaStep):
         self.A = np.array([[0, 0, 0], [1 / 3, 0, 0], [0, 2 / 3, 0]])
         self.B = np.array([1 / 4, 0, 3 / 4])
         self.C = np.array([0, 1 / 3, 2 / 3])
+        self.order = 3
         super().__init__()
 
 
@@ -83,6 +89,7 @@ class _Wray3Step(_RungeKuttaStep):
         self.A = np.array([[0, 0, 0], [8 / 15, 0, 0], [1 / 4, 5 / 12, 0]])
         self.B = np.array([1 / 4, 0, 3 / 4])
         self.C = np.array([0, 8 / 15, 2 / 3])
+        self.order = 3
         super().__init__()
 
 
@@ -91,6 +98,7 @@ class _Ralston3Step(_RungeKuttaStep):
         self.A = np.array([[0, 0, 0], [1 / 2, 0, 0], [0, 3 / 4, 0]])
         self.B = np.array([2 / 9, 1 / 3, 4 / 9])
         self.C = np.array([0, 1 / 2, 3 / 4])
+        self.order = 3
         super().__init__()
 
 
@@ -99,6 +107,7 @@ class _SSPRK3Step(_RungeKuttaStep):
         self.A = np.array([[0, 0, 0], [1, 0, 0], [1 / 4, 1 / 4, 0]])
         self.B = np.array([1 / 6, 1 / 6, 2 / 3])
         self.C = np.array([0, 1, 1 / 2])
+        self.order = 3
         super().__init__()
 
 
@@ -107,6 +116,7 @@ class _RK4Step(_RungeKuttaStep):
         self.A = np.array([[0, 0, 0, 0], [0.5, 0, 0, 0], [0, 0.5, 0, 0], [0, 0, 1, 0]])
         self.B = np.array([1 / 6, 1 / 3, 1 / 3, 1 / 6])
         self.C = np.array([0, 0.5, 0.5, 1])
+        self.order = 4
         super().__init__()
 
 
@@ -117,6 +127,7 @@ class _RK38Step(_RungeKuttaStep):
         )
         self.B = np.array([1 / 8, 3 / 8, 3 / 8, 1 / 8])
         self.C = np.array([0, 1 / 3, 2 / 3, 1])
+        self.order = 4
         super().__init__()
 
 
@@ -132,6 +143,7 @@ class _Ralston4Step(_RungeKuttaStep):
         )
         self.B = np.array([0.17476028, -0.55148066, 1.20553560, 0.17118478])
         self.C = np.array([0, 0.4, 0.45573725, 1])
+        self.order = 4
         super().__init__()
 
 
@@ -163,6 +175,59 @@ def _solve_to_fixed_step(
         t.append(t[-1] + h)
         y.append(method(f, t[-1], y[-1], h))
 
+    return ODEResult(np.asarray(y).T, np.asarray(t))
+
+
+# TODO:
+# - Max step size
+# - Finish on the users step
+def _solve_to_richardson_extrapolation(
+    f: callable,
+    y0: np.ndarray,
+    t_span: tuple[float, float],
+    h: float,
+    method: callable,
+    r_tol: float,
+    a_tol: float,
+) -> ODEResult:
+    t = [t_span[0]]
+    y = [np.asarray(y0)]
+
+    # Check if integration is finished
+    while (t[-1] - t_span[-1]) < 0:
+        step_accepted = False
+        while not step_accepted:
+            # take two small steps to find y2
+            y2 = y[-1]
+            for _ in range(2):
+                y2 = method(f, t[-1], y2, h)
+            # take one large step two find w
+            w = method(f, t[-1], y2, 2 * h)
+
+            # eq 4.4 page 165 Hairer Solving ODEs 1
+            local_err = (y2 - w) / (2**method.order - 1)
+
+            # account for both relative and absolute error tolerances
+            # eq 4.10 page 167 Hairer Solving ODEs 1
+            scale = a_tol + np.maximum(y2, w) * r_tol
+
+            # eq 4.11 page 168 Hairer
+            err = np.sqrt(np.sum((local_err / scale) ** 2) / local_err.size)
+
+            # accept the step
+            if err <= 1:
+                step_accepted = True
+                t.append(t[-1] + 2 * h)
+                y.append(y2)
+
+            # adjust step size
+            fac_max = 1.5
+            fac_min = 0.5
+            safety_fac = 0.9
+            h *= np.minimum(
+                fac_max,
+                np.maximum(fac_min, safety_fac * (1 / err) ** (1 / (method.order + 1))),
+            )
     return ODEResult(np.asarray(y).T, np.asarray(t))
 
 
@@ -227,7 +292,7 @@ def solve_ivp(
 
     if h is None and (r_tol != 0 or a_tol != 0):
         # compute initial step size
-        ...
+        raise NotImplementedError
 
     if method in _fixed_step_methods:
         method = _fixed_step_methods[method]()
@@ -235,9 +300,10 @@ def solve_ivp(
             # run in fixed mode
             return _solve_to_fixed_step(f_wrapper, y0, t_span, h, method)
         else:
-            # run in adaptive step mode
-            ...
+            return _solve_to_richardson_extrapolation(
+                f_wrapper, y0, t_span, h, method, r_tol, a_tol
+            )
     elif method in _embedded_methods:
-        ...
+        raise NotImplementedError
     else:
         raise ValueError(f"{method} is not a valid option for 'method'")
