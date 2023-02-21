@@ -189,9 +189,13 @@ def _solve_to_richardson_extrapolation(
     method: callable,
     r_tol: float,
     a_tol: float,
+    max_step: float,
 ) -> ODEResult:
     t = [t_span[0]]
     y = [np.asarray(y0)]
+
+    # need to half the max step as we are taking two steps at time
+    max_step /= 2
 
     # Check if integration is finished
     while (t[-1] - t_span[-1]) < 0:
@@ -214,20 +218,24 @@ def _solve_to_richardson_extrapolation(
             # eq 4.11 page 168 Hairer
             err = np.sqrt(np.sum((local_err / scale) ** 2) / local_err.size)
 
-            # accept the step
-            if err <= 1:
-                step_accepted = True
-                t.append(t[-1] + 2 * h)
-                y.append(y2)
-
             # adjust step size
             fac_max = 1.5
             fac_min = 0.5
             safety_fac = 0.9
-            h *= np.minimum(
+            h_new = h * np.minimum(
                 fac_max,
                 np.maximum(fac_min, safety_fac * (1 / err) ** (1 / (method.order + 1))),
             )
+            h_new = max_step if h_new > max_step else h_new
+
+            # accept the step
+            if err <= 1 and h <= max_step:
+                step_accepted = True
+                t.append(t[-1] + 2 * h)
+                y.append(y2)
+                continue
+            h = h_new
+
     return ODEResult(np.asarray(y).T, np.asarray(t))
 
 
@@ -262,6 +270,7 @@ def solve_ivp(
     h: float = None,
     r_tol: float = 0,
     a_tol: float = 0,
+    max_step: float = np.inf,
 ) -> ODEResult:
     if not callable(f):
         raise ValueError("'f' must be callable")
@@ -301,7 +310,7 @@ def solve_ivp(
             return _solve_to_fixed_step(f_wrapper, y0, t_span, h, method)
         else:
             return _solve_to_richardson_extrapolation(
-                f_wrapper, y0, t_span, h, method, r_tol, a_tol
+                f_wrapper, y0, t_span, h, method, r_tol, a_tol, max_step
             )
     elif method in _embedded_methods:
         raise NotImplementedError
