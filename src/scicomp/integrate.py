@@ -25,11 +25,13 @@ def _butcher_tableau_step(
 
     ks = np.empty((y.size, s))
     for i in range(s):
-        ks[:, i] = f(t + C[i] * h,
-                     y + h * np.sum(A[i, np.newaxis, : i + 1] * ks[:, : i + 1],
-                                    axis=-1))
+        ks[:, i] = f(
+            t + C[i] * h,
+            y + h * np.sum(A[i, np.newaxis, : i + 1] * ks[:, : i + 1], axis=-1),
+        )
 
     return y + h * np.sum(B * ks, axis=-1)
+
 
 def _euler_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
     """Performs one step of the forward euler method
@@ -56,80 +58,61 @@ def _euler_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
     return _butcher_tableau_step(f, t, y, h, A, B, C)
 
 
-def _explicit_midpoint_step(f: callable, t: float,
-                            y: np.ndarray, h: float) -> np.ndarray:
-    A = np.array([[0, 0],
-                  [0.5, 0]])
+def _explicit_midpoint_step(
+    f: callable, t: float, y: np.ndarray, h: float
+) -> np.ndarray:
+    A = np.array([[0, 0], [0.5, 0]])
     B = np.array([0, 1])
     C = np.array([0, 0.5])
     return _butcher_tableau_step(f, t, y, h, A, B, C)
 
 
-def _heuns_step(f: callable, t: float,
-                            y: np.ndarray, h: float) -> np.ndarray:
-    A = np.array([[0, 0],
-                  [1, 0]])
+def _heuns_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
+    A = np.array([[0, 0], [1, 0]])
     B = np.array([0.5, 0.5])
     C = np.array([0, 1])
     return _butcher_tableau_step(f, t, y, h, A, B, C)
 
 
-def _ralston_step(f: callable, t: float,
-                            y: np.ndarray, h: float) -> np.ndarray:
-    A = np.array([[0, 0],
-                  [2/3, 0]])
-    B = np.array([1/4, 3/4])
-    C = np.array([0, 2/3])
+def _ralston_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
+    A = np.array([[0, 0], [2 / 3, 0]])
+    B = np.array([1 / 4, 3 / 4])
+    C = np.array([0, 2 / 3])
     return _butcher_tableau_step(f, t, y, h, A, B, C)
 
 
-def _kutta3_step(f: callable, t: float,
-                            y: np.ndarray, h: float) -> np.ndarray:
-    A = np.array([[0, 0, 0],
-                  [1/2, 0, 0],
-                  [-1, 2, 0]])
-    B = np.array([1/6, 2/3, 1/6])
-    C = np.array([0, 1/2, 1])
+def _kutta3_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
+    A = np.array([[0, 0, 0], [1 / 2, 0, 0], [-1, 2, 0]])
+    B = np.array([1 / 6, 2 / 3, 1 / 6])
+    C = np.array([0, 1 / 2, 1])
     return _butcher_tableau_step(f, t, y, h, A, B, C)
 
 
-def _heun3_step(f: callable, t: float,
-                            y: np.ndarray, h: float) -> np.ndarray:
-    A = np.array([[0, 0, 0],
-                  [1/3, 0, 0],
-                  [0, 2/3, 0]])
-    B = np.array([1/4, 0, 3/4])
-    C = np.array([0, 1/3, 2/3])
+def _heun3_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
+    A = np.array([[0, 0, 0], [1 / 3, 0, 0], [0, 2 / 3, 0]])
+    B = np.array([1 / 4, 0, 3 / 4])
+    C = np.array([0, 1 / 3, 2 / 3])
     return _butcher_tableau_step(f, t, y, h, A, B, C)
 
 
-def _wray3_step(f: callable, t: float,
-                            y: np.ndarray, h: float) -> np.ndarray:
-    A = np.array([[0, 0, 0],
-                  [8/15, 0, 0],
-                  [1/4, 5/12, 0]])
-    B = np.array([1/4, 0, 3/4])
-    C = np.array([0, 8/15, 2/3])
+def _wray3_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
+    A = np.array([[0, 0, 0], [8 / 15, 0, 0], [1 / 4, 5 / 12, 0]])
+    B = np.array([1 / 4, 0, 3 / 4])
+    C = np.array([0, 8 / 15, 2 / 3])
     return _butcher_tableau_step(f, t, y, h, A, B, C)
 
 
-def _ralston3_step(f: callable, t: float,
-                            y: np.ndarray, h: float) -> np.ndarray:
-    A = np.array([[0, 0, 0],
-                  [1/2, 0, 0],
-                  [0, 3/4, 0]])
-    B = np.array([2/9, 1/3, 4/9])
-    C = np.array([0, 1/2, 3/4])
+def _ralston3_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
+    A = np.array([[0, 0, 0], [1 / 2, 0, 0], [0, 3 / 4, 0]])
+    B = np.array([2 / 9, 1 / 3, 4 / 9])
+    C = np.array([0, 1 / 2, 3 / 4])
     return _butcher_tableau_step(f, t, y, h, A, B, C)
 
 
-def _SSPRK3_step(f: callable, t: float,
-                            y: np.ndarray, h: float) -> np.ndarray:
-    A = np.array([[0, 0, 0],
-                  [1, 0, 0],
-                  [1/4, 1/4, 0]])
-    B = np.array([1/6, 1/6, 2/3])
-    C = np.array([0, 1, 1/2])
+def _SSPRK3_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
+    A = np.array([[0, 0, 0], [1, 0, 0], [1 / 4, 1 / 4, 0]])
+    B = np.array([1 / 6, 1 / 6, 2 / 3])
+    C = np.array([0, 1, 1 / 2])
     return _butcher_tableau_step(f, t, y, h, A, B, C)
 
 
@@ -151,33 +134,32 @@ def _rk4_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
     np.ndarray
         Solution after one step
     """
-    A =np.array([[0, 0, 0, 0],
-                 [0.5, 0, 0, 0],
-                 [0, 0.5, 0, 0],
-                 [0, 0, 1, 0]])
-    B = np.array([1/6, 1/3, 1/3, 1/6])
+    A = np.array([[0, 0, 0, 0], [0.5, 0, 0, 0], [0, 0.5, 0, 0], [0, 0, 1, 0]])
+    B = np.array([1 / 6, 1 / 3, 1 / 3, 1 / 6])
     C = np.array([0, 0.5, 0.5, 1])
     return _butcher_tableau_step(f, t, y, h, A, B, C)
 
 
 def _rk38_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
-    A =np.array([[0, 0, 0, 0],
-                 [1/3, 0, 0, 0],
-                 [-1/3, 1, 0, 0],
-                 [1, -1, 1, 0]])
-    B = np.array([1/8, 3/8, 3/8, 1/8])
-    C = np.array([0, 1/3, 2/3, 1])
+    A = np.array([[0, 0, 0, 0], [1 / 3, 0, 0, 0], [-1 / 3, 1, 0, 0], [1, -1, 1, 0]])
+    B = np.array([1 / 8, 3 / 8, 3 / 8, 1 / 8])
+    C = np.array([0, 1 / 3, 2 / 3, 1])
     return _butcher_tableau_step(f, t, y, h, A, B, C)
 
 
 def _ralston4_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
-    A =np.array([[0, 0, 0, 0],
-                 [.4, 0, 0, 0],
-                 [.29697761, .15875964, 0, 0],
-                 [.21810040, -3.050965161, 3.83286476, 0]])
-    B = np.array([.17476028, -.55148066, 1.20553560, .17118478])
-    C = np.array([0, .4, .45573725, 1])
+    A = np.array(
+        [
+            [0, 0, 0, 0],
+            [0.4, 0, 0, 0],
+            [0.29697761, 0.15875964, 0, 0],
+            [0.21810040, -3.050965161, 3.83286476, 0],
+        ]
+    )
+    B = np.array([0.17476028, -0.55148066, 1.20553560, 0.17118478])
+    C = np.array([0, 0.4, 0.45573725, 1])
     return _butcher_tableau_step(f, t, y, h, A, B, C)
+
 
 # Embedded Error Estimate Steps
 
@@ -185,6 +167,7 @@ def _ralston4_step(f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray
 # =====================================================================================
 # Stepper Routines
 # =====================================================================================
+
 
 @dataclass
 class ODEResult:
@@ -208,22 +191,25 @@ def _solve_to_fixed_step(
 
     return ODEResult(np.asarray(y).T, np.asarray(t))
 
+
 # =====================================================================================
 # Driver
 # =====================================================================================
 
-_fixed_step_methods = {"euler": _euler_step,
-                       "midpoint": _explicit_midpoint_step,
-                       "heun": _heuns_step,
-                       "ralston": _ralston_step,
-                       "kutta2": _kutta3_step,
-                       "heun3": _heun3_step,
-                       "wray3": _wray3_step,
-                       "ralston3": _ralston3_step,
-                       "ssprk3": _SSPRK3_step,
-                       "rk4": _rk4_step,
-                       "rk38": _rk38_step,
-                       "ralston4": _ralston4_step}
+_fixed_step_methods = {
+    "euler": _euler_step,
+    "midpoint": _explicit_midpoint_step,
+    "heun": _heuns_step,
+    "ralston": _ralston_step,
+    "kutta2": _kutta3_step,
+    "heun3": _heun3_step,
+    "wray3": _wray3_step,
+    "ralston3": _ralston3_step,
+    "ssprk3": _SSPRK3_step,
+    "rk4": _rk4_step,
+    "rk38": _rk38_step,
+    "ralston4": _ralston4_step,
+}
 
 _embedded_methods = {}
 

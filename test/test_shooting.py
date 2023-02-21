@@ -9,4 +9,6 @@ class TestFindLimitCycle:
         rho = -1
         np.testing.assert_allclose(
             find_limit_cycle(lambda t, y: hopf_normal(t, y, beta, rho), [1, 1, 6])[-1],
-            2*np.pi, rtol=1e-4)
+            2 * np.pi,
+            rtol=1e-4,
+        )
