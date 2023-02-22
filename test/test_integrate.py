@@ -57,6 +57,14 @@ class TestSolveOde:
         np.testing.assert_allclose(t_span, (res.t[0], res.t[-1]))
 
     @FIXED_STEP_METHODS
+    def test_t_span_obeyed_richardson_extrapolation(self, method):
+        t_span = (2, 5.432)
+        res = integrate.solve_ivp(
+            zero_ode, np.ones(10), t_span, method=method, h=1e-1, r_tol=1e-3
+        )
+        np.testing.assert_allclose(t_span, (res.t[0], res.t[-1]))
+
+    @FIXED_STEP_METHODS
     def test_fixed_steps_taken(self, method):
         res = integrate.solve_ivp(zero_ode, np.ones(10), (0, 5), method=method, h=1e-1)
         diff = np.diff(res.t)[:-1]

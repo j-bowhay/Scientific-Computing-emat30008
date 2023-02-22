@@ -26,10 +26,10 @@ class _RungeKuttaStep:
                 y
                 + h * np.sum(self.A[i, np.newaxis, : i + 1] * ks[:, : i + 1], axis=-1),
             )
-        
+
         y1 = y + h * np.sum(self.B * ks, axis=-1)
-        
-        # return the error estimate if there is an embedded formula 
+
+        # return the error estimate if there is an embedded formula
         if hasattr(self, "B_hat"):
             return y1, np.sum((self.B - self.B_hat) * ks, axis=-1)
         return y1
@@ -247,8 +247,6 @@ def _solve_to_fixed_step(
     return ODEResult(np.asarray(y).T, np.asarray(t))
 
 
-# TODO:
-# - Finish on the users step
 def _solve_to_richardson_extrapolation(
     f: callable,
     y0: np.ndarray,
@@ -291,6 +289,8 @@ def _solve_to_richardson_extrapolation(
     # need to half the max step as we are taking two steps at time
     max_step /= 2
 
+    final_step = False
+
     # Check if integration is finished
     while (t[-1] - t_span[-1]) < 0:
         step_accepted = False
@@ -323,10 +323,14 @@ def _solve_to_richardson_extrapolation(
             h_new = max_step if h_new > max_step else h_new
 
             # accept the step
-            if err <= 1 and h <= max_step:
-                step_accepted = True
-                t.append(t[-1] + 2 * h)
-                y.append(y2)
+            if (err <= 1 and h <= max_step) or final_step:
+                if (t[-1] + 2 * h - t_span[-1]) > 0 and not final_step:
+                    final_step = True
+                    h_new = (t_span[-1] - t[-1]) / 2
+                else:
+                    step_accepted = True
+                    t.append(t[-1] + 2 * h)
+                    y.append(y2)
             h = h_new
 
     return ODEResult(np.asarray(y).T, np.asarray(t))
@@ -355,7 +359,7 @@ _embedded_methods = {
     "huen_euler": _HuanEulerStep,
     "rkf12": _RKF12Step,
     "bogacki_shampine": _BogackiShampineStep,
-    "rkf45": _RKF45Step
+    "rkf45": _RKF45Step,
 }
 
 
