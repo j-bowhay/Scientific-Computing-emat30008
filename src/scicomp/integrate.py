@@ -150,6 +150,49 @@ class _Ralston4Step(_RungeKuttaStep):
 # Embedded Error Estimate Steps
 
 
+class _HuanEulerStep(_HeunsStep):
+    def __init__(self) -> None:
+        self.b_hat = np.array([1, 0])
+        super().__init__()
+
+
+class _RKF12Step(_RungeKuttaStep):
+    def __init__(self) -> None:
+        self.A = np.array([[1 / 2, 0], [1 / 256, 255 / 256]])
+        self.B = np.array([1 / 512, 255 / 256, 1 / 512])
+        self.B_hat = np.array([1 / 255, 255 / 256, 0])
+        self.C = np.array([1 / 2, 1])
+        self.order = 2
+        super().__init__()
+
+
+class _BogackiShampineStep(_RungeKuttaStep):
+    def __init__(self) -> None:
+        self.A = np.array([[1 / 2, 0, 0], [0, 3 / 4, 0], [2 / 9, 1 / 3, 4 / 9]])
+        self.B = np.array([2 / 9, 1 / 3, 4 / 9, 0])
+        self.B_hat = np.array([7 / 24, 1 / 4, 1 / 3, 1 / 8])
+        self.C = np.array([1 / 2, 3 / 4, 1])
+        self.order = 3
+        super().__init__()
+
+
+class _RKF45Step(_RungeKuttaStep):
+    def __init__(self) -> None:
+        self.A = np.array(
+            [
+                [1 / 4, 0, 0, 0, 0],
+                [3 / 32, 9 / 32, 0, 0, 0],
+                [1932 / 2197, -7200 / 2197, 7296 / 2197, 0, 0],
+                [439 / 216, -8, 3680 / 513, -845 / 4104, 0],
+                [-8 / 27, 2, -3544 / 2565, 1859 / 4104, -11 / 40],
+            ]
+        )
+        self.B = np.array([16 / 135, 0, 6656 / 12825, 28561 / 56430, -9 / 50, 2 / 55])
+        self.B_hat = np.array([25 / 216, 0, 1408 / 2565, 2197 / 4104, -1 / 5, 0])
+        self.C = np.array([1 / 4, 3 / 8, 12 / 13, 1, 1 / 2])
+        super().__init__()
+
+
 # =====================================================================================
 # Stepper Routines
 # =====================================================================================
@@ -302,7 +345,12 @@ _fixed_step_methods = {
     "ralston4": _Ralston4Step,
 }
 
-_embedded_methods = {}
+_embedded_methods = {
+    "huen_euler": _HuanEulerStep,
+    "rkf12": _RKF12Step,
+    "bogacki_shampine": _BogackiShampineStep,
+    "rkf45": _RKF45Step
+}
 
 
 def solve_ivp(
