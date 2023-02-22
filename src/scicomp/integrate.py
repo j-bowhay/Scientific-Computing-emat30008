@@ -300,7 +300,7 @@ def _solve_to_richardson_extrapolation(
             for _ in range(2):
                 y2 = method(f, t[-1], y2, h)
             # take one large step two find w
-            w = method(f, t[-1], y2, 2 * h)
+            w = method(f, t[-1], y[-1], 2 * h)
 
             # eq 4.4 page 165 Hairer Solving ODEs 1
             local_err = (y2 - w) / (2**method.order - 1)
