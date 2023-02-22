@@ -164,6 +164,26 @@ class ODEResult:
 def _solve_to_fixed_step(
     f: callable, y0: np.ndarray, t_span: tuple[float, float], h: float, method: callable
 ) -> ODEResult:
+    """Solves an ivp by taking fixed steps.
+
+    Parameters
+    ----------
+    f : callable
+        The rhs function for the ODE.
+    y0 : np.ndarray
+        The initial conditions.
+    t_span : tuple[float, float]
+        The time range to solve over.
+    h : float
+        The fixed step size to use.
+    method : callable
+        Function that returns the next step of the ODE.
+
+    Returns
+    -------
+    ODEResult
+        Results object containing the solution of the IVP.
+    """
     t = [t_span[0]]
     y = [np.asarray(y0)]
 
@@ -179,7 +199,6 @@ def _solve_to_fixed_step(
 
 
 # TODO:
-# - Max step size
 # - Finish on the users step
 def _solve_to_richardson_extrapolation(
     f: callable,
@@ -191,6 +210,32 @@ def _solve_to_richardson_extrapolation(
     a_tol: float,
     max_step: float,
 ) -> ODEResult:
+    """_summary_
+
+    Parameters
+    ----------
+    f : callable
+        The rhs function for the ODE.
+    y0 : np.ndarray
+        The initial conditions.
+    t_span : tuple[float, float]
+        The time range to solve over.
+    h : float
+        The initial step size to use.
+    method : callable
+        Function that returns the next step of the ODE.
+    r_tol : float
+        The relative tolerance (the correct number of digits).
+    a_tol : float
+        The absolute tolerance (the correct number of decimal places).
+    max_step : float
+        The maximum acceptable step size to take.
+
+    Returns
+    -------
+    ODEResult
+        Results object containing the solution of the IVP.
+    """
     t = [t_span[0]]
     y = [np.asarray(y0)]
 
@@ -213,7 +258,7 @@ def _solve_to_richardson_extrapolation(
 
             # account for both relative and absolute error tolerances
             # eq 4.10 page 167 Hairer Solving ODEs 1
-            scale = a_tol + np.maximum(y2, w) * r_tol
+            scale = a_tol + np.maximum(np.abs(y2), np.abs(w)) * r_tol
 
             # eq 4.11 page 168 Hairer
             err = np.sqrt(np.sum((local_err / scale) ** 2) / local_err.size)
@@ -233,7 +278,6 @@ def _solve_to_richardson_extrapolation(
                 step_accepted = True
                 t.append(t[-1] + 2 * h)
                 y.append(y2)
-                continue
             h = h_new
 
     return ODEResult(np.asarray(y).T, np.asarray(t))
