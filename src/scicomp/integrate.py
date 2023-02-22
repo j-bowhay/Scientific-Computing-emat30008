@@ -26,8 +26,13 @@ class _RungeKuttaStep:
                 y
                 + h * np.sum(self.A[i, np.newaxis, : i + 1] * ks[:, : i + 1], axis=-1),
             )
-
-        return y + h * np.sum(self.B * ks, axis=-1)
+        
+        y1 = y + h * np.sum(self.B * ks, axis=-1)
+        
+        # return the error estimate if there is an embedded formula 
+        if hasattr(self, "B_hat"):
+            return y1, np.sum((self.B - self.B_hat) * ks, axis=-1)
+        return y1
 
 
 class _EulerStep(_RungeKuttaStep):
@@ -190,6 +195,7 @@ class _RKF45Step(_RungeKuttaStep):
         self.B = np.array([16 / 135, 0, 6656 / 12825, 28561 / 56430, -9 / 50, 2 / 55])
         self.B_hat = np.array([25 / 216, 0, 1408 / 2565, 2197 / 4104, -1 / 5, 0])
         self.C = np.array([1 / 4, 3 / 8, 12 / 13, 1, 1 / 2])
+        self.order = 5
         super().__init__()
 
 
