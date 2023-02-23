@@ -155,28 +155,34 @@ class _Ralston4Step(_RungeKuttaStep):
 # Embedded Error Estimate Steps
 
 
-class _HuanEulerStep(_HeunsStep):
+class _HeunEulerStep(_RungeKuttaStep):
     def __init__(self) -> None:
-        self.b_hat = np.array([1, 0])
+        self.A = np.array([[0, 0], [1, 0]])
+        self.B = np.array([1 / 2, 1 / 2])
+        self.B_hat = np.array([1, 0])
+        self.C = np.array([0, 1])
+        self.order = 2
         super().__init__()
 
 
 class _RKF12Step(_RungeKuttaStep):
     def __init__(self) -> None:
-        self.A = np.array([[1 / 2, 0], [1 / 256, 255 / 256]])
+        self.A = np.array([[0, 0, 0], [1 / 2, 0, 0], [1 / 256, 255 / 256, 0]])
         self.B = np.array([1 / 512, 255 / 256, 1 / 512])
         self.B_hat = np.array([1 / 255, 255 / 256, 0])
-        self.C = np.array([1 / 2, 1])
+        self.C = np.array([0, 1 / 2, 1])
         self.order = 2
         super().__init__()
 
 
 class _BogackiShampineStep(_RungeKuttaStep):
     def __init__(self) -> None:
-        self.A = np.array([[1 / 2, 0, 0], [0, 3 / 4, 0], [2 / 9, 1 / 3, 4 / 9]])
+        self.A = np.array(
+            [[0, 0, 0, 0], [1 / 2, 0, 0, 0], [0, 3 / 4, 0, 0], [2 / 9, 1 / 3, 4 / 9, 0]]
+        )
         self.B = np.array([2 / 9, 1 / 3, 4 / 9, 0])
         self.B_hat = np.array([7 / 24, 1 / 4, 1 / 3, 1 / 8])
-        self.C = np.array([1 / 2, 3 / 4, 1])
+        self.C = np.array([0, 1 / 2, 3 / 4, 1])
         self.order = 3
         super().__init__()
 
@@ -185,16 +191,17 @@ class _RKF45Step(_RungeKuttaStep):
     def __init__(self) -> None:
         self.A = np.array(
             [
-                [1 / 4, 0, 0, 0, 0],
-                [3 / 32, 9 / 32, 0, 0, 0],
-                [1932 / 2197, -7200 / 2197, 7296 / 2197, 0, 0],
-                [439 / 216, -8, 3680 / 513, -845 / 4104, 0],
-                [-8 / 27, 2, -3544 / 2565, 1859 / 4104, -11 / 40],
+                [0, 0, 0, 0, 0, 0],
+                [1 / 4, 0, 0, 0, 0, 0],
+                [3 / 32, 9 / 32, 0, 0, 0, 0],
+                [1932 / 2197, -7200 / 2197, 7296 / 2197, 0, 0, 0],
+                [439 / 216, -8, 3680 / 513, -845 / 4104, 0, 0],
+                [-8 / 27, 2, -3544 / 2565, 1859 / 4104, -11 / 40, 0],
             ]
         )
         self.B = np.array([16 / 135, 0, 6656 / 12825, 28561 / 56430, -9 / 50, 2 / 55])
         self.B_hat = np.array([25 / 216, 0, 1408 / 2565, 2197 / 4104, -1 / 5, 0])
-        self.C = np.array([1 / 4, 3 / 8, 12 / 13, 1, 1 / 2])
+        self.C = np.array([0, 1 / 4, 3 / 8, 12 / 13, 1, 1 / 2])
         self.order = 5
         super().__init__()
 
@@ -336,6 +343,85 @@ def _solve_to_richardson_extrapolation(
     return ODEResult(np.asarray(y).T, np.asarray(t))
 
 
+def _solve_to_embedded(
+    f: callable,
+    y0: np.ndarray,
+    t_span: tuple[float, float],
+    h: float,
+    method: callable,
+    r_tol: float,
+    a_tol: float,
+    max_step: float,
+) -> ODEResult:
+    """_summary_
+
+    Parameters
+    ----------
+    f : callable
+        The rhs function for the ODE.
+    y0 : np.ndarray
+        The initial conditions.
+    t_span : tuple[float, float]
+        The time range to solve over.
+    h : float
+        The initial step size to use.
+    method : callable
+        Function that returns the next step of the ODE.
+    r_tol : float
+        The relative tolerance (the correct number of digits).
+    a_tol : float
+        The absolute tolerance (the correct number of decimal places).
+    max_step : float
+        The maximum acceptable step size to take.
+
+    Returns
+    -------
+    ODEResult
+        Results object containing the solution of the IVP.
+    """
+    t = [t_span[0]]
+    y = [np.asarray(y0)]
+
+    final_step = False
+
+    # Check if integration is finished
+    while (t[-1] - t_span[-1]) < 0:
+        step_accepted = False
+        while not step_accepted:
+            # take two small steps to find y2
+            y2, local_err = method(f, t[-1], y[-1], h)
+
+            # account for both relative and absolute error tolerances
+            # eq 4.10 page 167 Hairer Solving ODEs 1
+            scale = a_tol + np.abs(y2) * r_tol
+
+            # eq 4.11 page 168 Hairer
+            err = np.sqrt(np.sum((local_err / scale) ** 2) / local_err.size)
+
+            # adjust step size
+            fac_max = 1.5
+            fac_min = 0.5
+            safety_fac = 0.9
+            h_new = h * np.minimum(
+                fac_max,
+                np.maximum(fac_min, safety_fac * (1 / err) ** (1 / (method.order + 1))),
+            )
+            h_new = max_step if h_new > max_step else h_new
+
+            # accept the step
+            if (err <= 1 and h <= max_step) or final_step:
+                if (t[-1] + h - t_span[-1]) > 0 and not final_step:
+                    final_step = True
+                    h_new = t_span[-1] - t[-1]
+                else:
+                    step_accepted = True
+                    t.append(t[-1] + h)
+                    y.append(y2)
+            h = h_new
+
+    return ODEResult(np.asarray(y).T, np.asarray(t))
+
+
 # =====================================================================================
 # Driver
 # =====================================================================================
@@ -356,7 +442,7 @@ _fixed_step_methods = {
 }
 
 _embedded_methods = {
-    "huen_euler": _HuanEulerStep,
+    "heun_euler": _HeunEulerStep,
     "rkf12": _RKF12Step,
     "bogacki_shampine": _BogackiShampineStep,
     "rkf45": _RKF45Step,
@@ -415,6 +501,9 @@ def solve_ivp(
                 f_wrapper, y0, t_span, h, method, r_tol, a_tol, max_step
             )
     elif method in _embedded_methods:
-        raise NotImplementedError
+        method = _embedded_methods[method]()
+        return _solve_to_embedded(
+            f_wrapper, y0, t_span, h, method, r_tol, a_tol, max_step
+        )
     else:
         raise ValueError(f"{method} is not a valid option for 'method'")
