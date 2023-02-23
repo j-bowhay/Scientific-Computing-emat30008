@@ -258,7 +258,7 @@ def _richardson_error_estimate(f, t, y, h, method, r_tol, a_tol):
     # take two small steps to find y2
     y1 = y[-1]
     for _ in range(2):
-        y1 = method(f, t[-1], y2, h / 2)
+        y1 = method(f, t[-1], y1, h / 2)
     # take one large step two find w
     w = method(f, t[-1], y[-1], h)
 
@@ -268,20 +268,21 @@ def _richardson_error_estimate(f, t, y, h, method, r_tol, a_tol):
     # account for both relative and absolute error tolerances
     # eq 4.10 page 167 Hairer Solving ODEs 1
     scale = a_tol + np.maximum(np.abs(y1), np.abs(w)) * r_tol
-    
+
     return y1, local_err, scale
+
 
 def _embedded_error_estimate(f, t, y, h, method, r_tol, a_tol):
     y1, local_err = method(f, t[-1], y[-1], h)
 
     # account for both relative and absolute error tolerances
     # eq 4.10 page 167 Hairer Solving ODEs 1
-    scale = a_tol + np.abs(y2) * r_tol
+    scale = a_tol + np.abs(y1) * r_tol
 
     return y1, local_err, scale
 
 
-def _solve_to_richardson_extrapolation(
+def _solve_to_adaptive(
     f: callable,
     y0: np.ndarray,
     t_span: tuple[float, float],
@@ -290,6 +291,7 @@ def _solve_to_richardson_extrapolation(
     r_tol: float,
     a_tol: float,
     max_step: float,
+    error_estimate: callable,
 ) -> ODEResult:
     """_summary_
 
@@ -326,81 +328,7 @@ def _solve_to_richardson_extrapolation(
     while (t[-1] - t_span[-1]) < 0:
         step_accepted = False
         while not step_accepted:
-            y2, local_err, scale = _richardson_error_estimate(f, t, y, h, method, r_tol, a_tol)
-
-            # eq 4.11 page 168 Hairer
-            err = np.sqrt(np.sum((local_err / scale) ** 2) / local_err.size)
-
-            # adjust step size
-            fac_max = 1.5
-            fac_min = 0.5
-            safety_fac = 0.9
-            h_new = h * np.minimum(
-                fac_max,
-                np.maximum(fac_min, safety_fac * (1 / err) ** (1 / (method.order + 1))),
-            )
-            h_new = max_step if h_new > max_step else h_new
-
-            # accept the step
-            if (err <= 1 and h <= max_step) or final_step:
-                if (t[-1] + h - t_span[-1]) > 0 and not final_step:
-                    final_step = True
-                    h_new = t_span[-1] - t[-1]
-                else:
-                    step_accepted = True
-                    t.append(t[-1] + h)
-                    y.append(y2)
-            h = h_new
-
-    return ODEResult(np.asarray(y).T, np.asarray(t))
-
-
-def _solve_to_embedded(
-    f: callable,
-    y0: np.ndarray,
-    t_span: tuple[float, float],
-    h: float,
-    method: callable,
-    r_tol: float,
-    a_tol: float,
-    max_step: float,
-) -> ODEResult:
-    """_summary_
-
-    Parameters
-    ----------
-    f : callable
-        The rhs function for the ODE.
-    y0 : np.ndarray
-        The initial conditions.
-    t_span : tuple[float, float]
-        The time range to solve over.
-    h : float
-        The initial step size to use.
-    method : callable
-        Function that returns the next step of the ODE.
-    r_tol : float
-        The relative tolerance (the correct number of digits).
-    a_tol : float
-        The absolute tolerance (the correct number of decimal places).
-    max_step : float
-        The maximum acceptable step size to take.
-
-    Returns
-    -------
-    ODEResult
-        Results object containing the solution of the IVP.
-    """
-    t = [t_span[0]]
-    y = [np.asarray(y0)]
-
-    final_step = False
-
-    # Check if integration is finished
-    while (t[-1] - t_span[-1]) < 0:
-        step_accepted = False
-        while not step_accepted:
-            y2, local_err, scale = _embedded_error_estimate(f, t, y, h, method, r_tol, a_tol)
+            y2, local_err, scale = error_estimate(f, t, y, h, method, r_tol, a_tol)
 
             # eq 4.11 page 168 Hairer
             err = np.sqrt(np.sum((local_err / scale) ** 2) / local_err.size)
@@ -504,13 +432,29 @@ def solve_ivp(
             # run in fixed mode
             return _solve_to_fixed_step(f_wrapper, y0, t_span, h, method)
         else:
-            return _solve_to_richardson_extrapolation(
-                f_wrapper, y0, t_span, h, method, r_tol, a_tol, max_step
+            return _solve_to_adaptive(
+                f_wrapper,
+                y0,
+                t_span,
+                h,
+                method,
+                r_tol,
+                a_tol,
+                max_step,
+                _richardson_error_estimate,
             )
     elif method in _embedded_methods:
         method = _embedded_methods[method]()
-        return _solve_to_embedded(
-            f_wrapper, y0, t_span, h, method, r_tol, a_tol, max_step
+        return _solve_to_adaptive(
+            f_wrapper,
+            y0,
+            t_span,
+            h,
+            method,
+            r_tol,
+            a_tol,
+            max_step,
+            _embedded_error_estimate,
         )
     else:
         raise ValueError(f"{method} is not a valid option for 'method'")
