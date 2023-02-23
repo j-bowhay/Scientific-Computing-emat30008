@@ -11,7 +11,7 @@ res = solve_ivp(
     lambda t, y: predator_prey(t, y, a, b, d),
     t_span=(0, 100),
     y0=[1, 1],
-    r_tol=1e-6,
+    r_tol=1e-5,
     method="rk4",
     h=0.1,
 )
