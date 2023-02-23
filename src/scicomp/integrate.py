@@ -293,9 +293,6 @@ def _solve_to_richardson_extrapolation(
     t = [t_span[0]]
     y = [np.asarray(y0)]
 
-    # need to half the max step as we are taking two steps at time
-    max_step /= 2
-
     final_step = False
 
     # Check if integration is finished
@@ -305,9 +302,9 @@ def _solve_to_richardson_extrapolation(
             # take two small steps to find y2
             y2 = y[-1]
             for _ in range(2):
-                y2 = method(f, t[-1], y2, h)
+                y2 = method(f, t[-1], y2, h / 2)
             # take one large step two find w
-            w = method(f, t[-1], y[-1], 2 * h)
+            w = method(f, t[-1], y[-1], h)
 
             # eq 4.4 page 165 Hairer Solving ODEs 1
             local_err = (y2 - w) / (2**method.order - 1)
@@ -331,12 +328,12 @@ def _solve_to_richardson_extrapolation(
 
             # accept the step
             if (err <= 1 and h <= max_step) or final_step:
-                if (t[-1] + 2 * h - t_span[-1]) > 0 and not final_step:
+                if (t[-1] + h - t_span[-1]) > 0 and not final_step:
                     final_step = True
-                    h_new = (t_span[-1] - t[-1]) / 2
+                    h_new = t_span[-1] - t[-1]
                 else:
                     step_accepted = True
-                    t.append(t[-1] + 2 * h)
+                    t.append(t[-1] + h)
                     y.append(y2)
             h = h_new
 
