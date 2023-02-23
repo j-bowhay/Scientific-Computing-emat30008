@@ -27,11 +27,11 @@ class _RungeKuttaStep:
                 + h * np.sum(self.A[i, np.newaxis, : i + 1] * ks[:, : i + 1], axis=-1),
             )
 
-        y1 = y + h * np.sum(self.B * ks, axis=-1)
+        y1 = y + h * np.inner(self.B, ks)
 
         # return the error estimate if there is an embedded formula
         if hasattr(self, "B_hat"):
-            return y1, np.sum((self.B - self.B_hat) * ks, axis=-1)
+            return y1, np.inner(self.B - self.B_hat, ks)
         return y1
 
 
