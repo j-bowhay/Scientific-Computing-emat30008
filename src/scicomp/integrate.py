@@ -256,20 +256,29 @@ def _solve_to_fixed_step(
 
 def _richardson_error_estimate(f, t, y, h, method, r_tol, a_tol):
     # take two small steps to find y2
-    y2 = y[-1]
+    y1 = y[-1]
     for _ in range(2):
-        y2 = method(f, t[-1], y2, h / 2)
+        y1 = method(f, t[-1], y2, h / 2)
     # take one large step two find w
     w = method(f, t[-1], y[-1], h)
 
     # eq 4.4 page 165 Hairer Solving ODEs 1
-    local_err = (y2 - w) / (2**method.order - 1)
+    local_err = (y1 - w) / (2**method.order - 1)
 
     # account for both relative and absolute error tolerances
     # eq 4.10 page 167 Hairer Solving ODEs 1
-    scale = a_tol + np.maximum(np.abs(y2), np.abs(w)) * r_tol
+    scale = a_tol + np.maximum(np.abs(y1), np.abs(w)) * r_tol
     
-    return y2, local_err, scale
+    return y1, local_err, scale
+
+def _embedded_error_estimate(f, t, y, h, method, r_tol, a_tol):
+    y1, local_err = method(f, t[-1], y[-1], h)
+
+    # account for both relative and absolute error tolerances
+    # eq 4.10 page 167 Hairer Solving ODEs 1
+    scale = a_tol + np.abs(y2) * r_tol
+
+    return y1, local_err, scale
 
 
 def _solve_to_richardson_extrapolation(
@@ -391,12 +400,7 @@ def _solve_to_embedded(
     while (t[-1] - t_span[-1]) < 0:
         step_accepted = False
         while not step_accepted:
-            # take two small steps to find y2
-            y2, local_err = method(f, t[-1], y[-1], h)
-
-            # account for both relative and absolute error tolerances
-            # eq 4.10 page 167 Hairer Solving ODEs 1
-            scale = a_tol + np.abs(y2) * r_tol
+            y2, local_err, scale = _embedded_error_estimate(f, t, y, h, method, r_tol, a_tol)
 
             # eq 4.11 page 168 Hairer
             err = np.sqrt(np.sum((local_err / scale) ** 2) / local_err.size)
