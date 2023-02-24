@@ -406,6 +406,30 @@ _embedded_methods = {
     "rkf45": _RKF45Step,
 }
 
+_all_methods = {**_fixed_step_methods, **_embedded_methods}
+
+
+def _estimate_initial_step_size(f, y0, t0, method, r_tol, a_tol):
+    scale = a_tol + np.abs(y0) * r_tol
+    d0 = np.sqrt(np.sum((y0 / scale) ** 2) / y0.size)
+    # not sure if this should be a different scale?
+    d1 = np.sqrt(np.sum((f(t0, y0) / scale) ** 2) / y0.size)
+
+    if d0 < 1e-5 or d1 < 1e-5:
+        h0 = 1e-6
+    else:
+        h0 = 0.01 * (d0 / d1)
+
+    y1 = _EulerStep()(f, t0, y0, h0)
+    d2 = np.sqrt(np.sum((f(t0 + h0, y1) - f(t0, y0) / scale) ** 2) / y0.size) / h0
+
+    if np.maximum(d1, d2) <= 1e-15:
+        h1 = np.maximum(1e-6, h0 * 1e-3)
+    else:
+        h1 = (0.01 / np.maximum(d1, d2)) ** (1 / (method.order + 1))
+    print(h1)
+    return h1
+
 
 def solve_ivp(
     f: Callable,
@@ -445,12 +469,13 @@ def solve_ivp(
     def f_wrapper(t, y):
         return np.asarray(f(t, y))
 
+    method_step = _all_methods[method]()
+
     if h is None and (r_tol != 0 or a_tol != 0):
         # compute initial step size
-        raise NotImplementedError
+        h = _estimate_initial_step_size(f, y0, t_span[0], method_step, r_tol, a_tol)
 
     if method in _fixed_step_methods:
-        method = _fixed_step_methods[method]()
         if r_tol == 0 and a_tol == 0:
             # run in fixed mode
             return _solve_to_fixed_step(f_wrapper, y0, t_span, h, method)
@@ -460,20 +485,19 @@ def solve_ivp(
                 y0,
                 t_span,
                 h,
-                method,
+                method_step,
                 r_tol,
                 a_tol,
                 max_step,
                 _richardson_error_estimate,
             )
     elif method in _embedded_methods:
-        method = _embedded_methods[method]()
         return _solve_to_adaptive(
             f_wrapper,
             y0,
             t_span,
             h,
-            method,
+            method_step,
             r_tol,
             a_tol,
             max_step,

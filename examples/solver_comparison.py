@@ -13,7 +13,6 @@ res = solve_ivp(
     y0=[1, 1],
     r_tol=1e-5,
     method="rk4",
-    h=0.1,
 )
 res2 = scipy.integrate.solve_ivp(
     lambda t, y: predator_prey(t, y, a, b, d), (0, 100), [1, 1], rtol=1e-6
