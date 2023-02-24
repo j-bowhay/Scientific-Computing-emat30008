@@ -60,7 +60,12 @@ class TestSolveOde:
     def test_t_span_obeyed_richardson_extrapolation(self, method):
         t_span = (2, 5.432)
         res = integrate.solve_ivp(
-            lambda t,y  : shm_ode(t, y ,1), [1, 0], t_span, method=method, h=1e-1, r_tol=1e-2
+            lambda t, y: shm_ode(t, y, 1),
+            [1, 0],
+            t_span,
+            method=method,
+            h=1e-1,
+            r_tol=1e-2,
         )
         np.testing.assert_allclose(t_span, (res.t[0], res.t[-1]))
 
