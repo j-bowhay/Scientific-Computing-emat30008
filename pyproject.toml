@@ -17,6 +17,8 @@ dependencies = [
 dev = [
     "ruff",
     "pytest",
+    "pytest-xdist",
+    "mypy",
 ]
 
 [build-system]

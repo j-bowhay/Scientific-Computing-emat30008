@@ -1,8 +1,10 @@
+from typing import Callable
+
 import numpy as np
 import scipy
 
 
-def find_limit_cycle(ode: callable, x0: np.ndarray) -> np.ndarray:
+def find_limit_cycle(ode: Callable, x0: np.ndarray) -> np.ndarray:
     def condition(x):
         condition_1 = (
             x[:2] - scipy.integrate.solve_ivp(ode, (0, x[2]), x[:2], rtol=1e-5).y[:, -1]

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import inspect
 from dataclasses import dataclass
+from typing import Callable
 
 import numpy as np
 
@@ -18,7 +19,7 @@ class _RungeKuttaStep:
     def __init__(self) -> None:
         self.s = self.B.size
 
-    def __call__(self, f: callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
+    def __call__(self, f: Callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
         ks = np.empty((y.size, self.s))
         for i in range(self.s):
             ks[:, i] = f(
@@ -218,7 +219,11 @@ class ODEResult:
 
 
 def _solve_to_fixed_step(
-    f: callable, y0: np.ndarray, t_span: tuple[float, float], h: float, method: callable
+    f: Callable,
+    y0: np.ndarray,
+    t_span: tuple[float, float],
+    h: float,
+    method: _RungeKuttaStep,
 ) -> ODEResult:
     """Solves an ivp by taking fixed steps.
 
@@ -254,7 +259,15 @@ def _solve_to_fixed_step(
     return ODEResult(np.asarray(y).T, np.asarray(t))
 
 
-def _richardson_error_estimate(f, t, y, h, method, r_tol, a_tol):
+def _richardson_error_estimate(
+    f: Callable,
+    t: float,
+    y: np.ndarray,
+    h: float,
+    method: _RungeKuttaStep,
+    r_tol: float,
+    a_tol: float,
+):
     # take two small steps to find y2
     y1 = y[-1]
     for _ in range(2):
@@ -272,7 +285,15 @@ def _richardson_error_estimate(f, t, y, h, method, r_tol, a_tol):
     return y1, local_err, scale
 
 
-def _embedded_error_estimate(f, t, y, h, method, r_tol, a_tol):
+def _embedded_error_estimate(
+    f: Callable,
+    t: float,
+    y: np.ndarray,
+    h: float,
+    method: _RungeKuttaStep,
+    r_tol: float,
+    a_tol: float,
+):
     y1, local_err = method(f, t[-1], y[-1], h)
 
     # account for both relative and absolute error tolerances
@@ -283,15 +304,15 @@ def _embedded_error_estimate(f, t, y, h, method, r_tol, a_tol):
 
 
 def _solve_to_adaptive(
-    f: callable,
+    f: Callable,
     y0: np.ndarray,
     t_span: tuple[float, float],
     h: float,
-    method: callable,
+    method: _RungeKuttaStep,
     r_tol: float,
     a_tol: float,
     max_step: float,
-    error_estimate: callable,
+    error_estimate: Callable,
 ) -> ODEResult:
     """_summary_
 
@@ -313,6 +334,8 @@ def _solve_to_adaptive(
         The absolute tolerance (the correct number of decimal places).
     max_step : float
         The maximum acceptable step size to take.
+    error_estimate : callable
+        The function which generates the next point, error estimate and the scale
 
     Returns
     -------
@@ -385,7 +408,7 @@ _embedded_methods = {
 
 
 def solve_ivp(
-    f: callable,
+    f: Callable,
     y0: np.ndarray,
     t_span: tuple[float, float],
     *,
