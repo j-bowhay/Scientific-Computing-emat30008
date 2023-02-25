@@ -3,9 +3,10 @@ from __future__ import annotations
 import inspect
 import math
 from dataclasses import dataclass
-from typing import Callable
+from typing import Callable, Optional
 
 import numpy as np
+import numpy.typing as npt
 
 # =====================================================================================
 # Step Routines
@@ -13,14 +14,18 @@ import numpy as np
 
 # Standard Runge Kutta Type Steps
 
+@dataclass
+class _StepResult:
+    y: np.ndarray
+    error_estimate: Optional[np.ndarray] = None
 
 class _RungeKuttaStep:
     __slots__ = "A", "B", "C", "s"
 
     def __init__(self) -> None:
         self.s = self.B.size
-
-    def __call__(self, f: Callable, t: float, y: np.ndarray, h: float) -> np.ndarray:
+    
+    def __call__(self, f: Callable, t: float, y: np.ndarray, h: float) -> _StepResult:
         ks = np.empty((y.size, self.s))
         for i in range(self.s):
             ks[:, i] = f(
@@ -33,8 +38,8 @@ class _RungeKuttaStep:
 
         # return the error estimate if there is an embedded formula
         if hasattr(self, "B_hat"):
-            return y1, np.inner(self.B - self.B_hat, ks)
-        return y1
+            return _StepResult(y1, np.inner(self.B - self.B_hat, ks))
+        return _StepResult(y1)
 
 
 class _EulerStep(_RungeKuttaStep):
@@ -235,15 +240,15 @@ def _solve_to_fixed_step(
         if (t[-1] + h - t_span[-1]) > 0:
             h = t_span[-1] - t[-1]
         t.append(t[-1] + h)
-        y.append(method(f, t[-1], y[-1], h))
+        y.append(method(f, t[-1], y[-1], h).y)
 
     return ODEResult(np.asarray(y).T, np.asarray(t))
 
 
 def _richardson_error_estimate(
     f: Callable,
-    t: float,
-    y: np.ndarray,
+    t: list,
+    y: list,
     h: float,
     method: _RungeKuttaStep,
     r_tol: float,
@@ -252,9 +257,9 @@ def _richardson_error_estimate(
     # take two small steps to find y2
     y1 = y[-1]
     for _ in range(2):
-        y1 = method(f, t[-1], y1, h / 2)
+        y1 = method(f, t[-1], y1, h / 2).y
     # take one large step two find w
-    w = method(f, t[-1], y[-1], h)
+    w = method(f, t[-1], y[-1], h).y
 
     # eq 4.4 page 165 Hairer Solving ODEs 1
     local_err = (y1 - w) / (2**method.order - 1)
@@ -268,14 +273,16 @@ def _richardson_error_estimate(
 
 def _embedded_error_estimate(
     f: Callable,
-    t: float,
-    y: np.ndarray,
+    t: list,
+    y: list,
     h: float,
     method: _RungeKuttaStep,
     r_tol: float,
     a_tol: float,
 ):
-    y1, local_err = method(f, t[-1], y[-1], h)
+    step = method(f, t[-1], y[-1], h)
+    y1 = step.y
+    local_err = step.error_estimate
 
     # account for both relative and absolute error tolerances
     # eq 4.10 page 167 Hairer Solving ODEs 1
@@ -401,7 +408,7 @@ def _estimate_initial_step_size(f, y0, t0, method, r_tol, a_tol, max_step):
     else:
         h0 = 0.01 * (d0 / d1)
 
-    y1 = _EulerStep()(f, t0, y0, h0)
+    y1 = _EulerStep()(f, t0, y0, h0).y
     diff = f(t0 + h0, y1) - f(t0, y0)
     scale = a_tol + np.abs(diff) * r_tol
     d2 = np.sqrt(np.sum((diff / scale) ** 2) / y0.size) / h0
@@ -416,13 +423,13 @@ def _estimate_initial_step_size(f, y0, t0, method, r_tol, a_tol, max_step):
 
 def solve_ivp(
     f: Callable,
-    y0: np.ndarray,
+    y0: npt.ArrayLike,
     t_span: tuple[float, float],
     *,
     method: str,
-    h: float = None,
-    r_tol: float = 0,
-    a_tol: float = 0,
+    h: Optional[float] = None,
+    r_tol: float = 0.,
+    a_tol: float = 0.,
     max_step: float = np.inf,
 ) -> ODEResult:
     if not callable(f):
@@ -454,7 +461,7 @@ def solve_ivp(
 
     method_step = _all_methods[method]()
 
-    if h is None and (r_tol != 0 or a_tol != 0):
+    if h is None:
         # compute initial step size
         h = _estimate_initial_step_size(
             f_wrapper, y0, t_span[0], method_step, r_tol, a_tol, max_step
@@ -463,7 +470,7 @@ def solve_ivp(
     if method in _fixed_step_methods:
         if r_tol == 0 and a_tol == 0:
             # run in fixed mode
-            return _solve_to_fixed_step(f_wrapper, y0, t_span, h, method)
+            return _solve_to_fixed_step(f_wrapper, y0, t_span, h, method_step)
         else:
             return _solve_to_adaptive(
                 f_wrapper,

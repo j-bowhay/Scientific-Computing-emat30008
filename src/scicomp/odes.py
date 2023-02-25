@@ -1,5 +1,5 @@
 import numpy as np
-
+import numpy.typing as npt
 
 def zero_ode(t: float, y: np.ndarray) -> np.ndarray:
     """An ODE RHS that always returns zeros.
@@ -41,7 +41,7 @@ def exponential_ode(t: float, y: np.ndarray) -> np.ndarray:
     return y
 
 
-def shm_ode(t: float, y: np.ndarray, omega: float) -> np.ndarray:
+def shm_ode(t: float, y: np.ndarray, omega: float) -> npt.ArrayLike:
     """An ODE RSH for simple harmonic motion with period `omega`.
 
     Parameters
@@ -61,14 +61,14 @@ def shm_ode(t: float, y: np.ndarray, omega: float) -> np.ndarray:
     return [y[1], -(omega**2) * y[0]]
 
 
-def hopf_normal(t: float, y: np.ndarray, beta: float, rho: float) -> np.ndarray:
+def hopf_normal(t: float, y: np.ndarray, beta: float, rho: float) -> npt.ArrayLike:
     return [
         beta * y[0] - y[1] + rho * y[0] * (y[0] ** 2 + y[1] ** 2),
         y[0] + beta * y[1] + rho * y[1] * (y[0] ** 2 + y[1] ** 2),
     ]
 
 
-def predator_prey(t: float, y: np.ndarray, a: float, b: float, d: float) -> np.ndarray:
+def predator_prey(t: float, y: np.ndarray, a: float, b: float, d: float) -> npt.ArrayLike:
     return [
         y[0] * (1 - y[0]) - (a * y[0] * y[1]) / (d + y[0]),
         b * y[1] * (1 - y[1] / y[0]),
