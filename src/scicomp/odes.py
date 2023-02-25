@@ -1,6 +1,7 @@
 import numpy as np
 import numpy.typing as npt
 
+
 def zero_ode(t: float, y: np.ndarray) -> np.ndarray:
     """An ODE RHS that always returns zeros.
 
@@ -68,7 +69,9 @@ def hopf_normal(t: float, y: np.ndarray, beta: float, rho: float) -> npt.ArrayLi
     ]
 
 
-def predator_prey(t: float, y: np.ndarray, a: float, b: float, d: float) -> npt.ArrayLike:
+def predator_prey(
+    t: float, y: np.ndarray, a: float, b: float, d: float
+) -> npt.ArrayLike:
     return [
         y[0] * (1 - y[0]) - (a * y[0] * y[1]) / (d + y[0]),
         b * y[1] * (1 - y[1] / y[0]),

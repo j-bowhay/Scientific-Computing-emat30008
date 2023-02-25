@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import inspect
 import math
+from abc import ABC, abstractproperty
 from dataclasses import dataclass
 from typing import Callable, Optional
 
@@ -14,17 +15,33 @@ import numpy.typing as npt
 
 # Standard Runge Kutta Type Steps
 
+
 @dataclass
 class _StepResult:
     y: np.ndarray
     error_estimate: Optional[np.ndarray] = None
 
-class _RungeKuttaStep:
-    __slots__ = "A", "B", "C", "s"
+
+class _RungeKuttaStep(ABC):
+    @abstractproperty
+    def A(self) -> np.ndarray:
+        ...
+
+    @abstractproperty
+    def B(self) -> np.ndarray:
+        ...
+
+    @abstractproperty
+    def C(self) -> np.ndarray:
+        ...
+
+    @abstractproperty
+    def order(self) -> int:
+        ...
 
     def __init__(self) -> None:
         self.s = self.B.size
-    
+
     def __call__(self, f: Callable, t: float, y: np.ndarray, h: float) -> _StepResult:
         ks = np.empty((y.size, self.s))
         for i in range(self.s):
@@ -43,154 +60,125 @@ class _RungeKuttaStep:
 
 
 class _EulerStep(_RungeKuttaStep):
-    def __init__(self) -> None:
-        self.A = np.array([[0]])
-        self.B = np.array([1])
-        self.C = np.array([0])
-        self.order = 1
-        super().__init__()
+    A = np.array([[0]])
+    B = np.array([1])
+    C = np.array([0])
+    order = 1
 
 
 class _ExplicitMidpointStep(_RungeKuttaStep):
-    def __init__(self) -> None:
-        self.A = np.array([[0, 0], [0.5, 0]])
-        self.B = np.array([0, 1])
-        self.C = np.array([0, 0.5])
-        self.order = 2
-        super().__init__()
+    A = np.array([[0, 0], [0.5, 0]])
+    B = np.array([0, 1])
+    C = np.array([0, 0.5])
+    order = 2
 
 
 class _HeunsStep(_RungeKuttaStep):
-    def __init__(self) -> None:
-        self.A = np.array([[0, 0], [1, 0]])
-        self.B = np.array([0.5, 0.5])
-        self.C = np.array([0, 1])
-        self.order = 2
-        super().__init__()
+    A = np.array([[0, 0], [1, 0]])
+    B = np.array([0.5, 0.5])
+    C = np.array([0, 1])
+    order = 2
 
 
 class _RalstonStep(_RungeKuttaStep):
-    def __init__(self) -> None:
-        self.A = np.array([[0, 0], [2 / 3, 0]])
-        self.B = np.array([1 / 4, 3 / 4])
-        self.C = np.array([0, 2 / 3])
-        self.order = 2
-        super().__init__()
+    A = np.array([[0, 0], [2 / 3, 0]])
+    B = np.array([1 / 4, 3 / 4])
+    C = np.array([0, 2 / 3])
+    order = 2
 
 
 class _Kutta3Step(_RungeKuttaStep):
-    def __init__(self) -> None:
-        self.A = np.array([[0, 0, 0], [1 / 2, 0, 0], [-1, 2, 0]])
-        self.B = np.array([1 / 6, 2 / 3, 1 / 6])
-        self.C = np.array([0, 1 / 2, 1])
-        self.order = 3
-        super().__init__()
+    A = np.array([[0, 0, 0], [1 / 2, 0, 0], [-1, 2, 0]])
+    B = np.array([1 / 6, 2 / 3, 1 / 6])
+    C = np.array([0, 1 / 2, 1])
+    order = 3
 
 
 class _Heun3Step(_RungeKuttaStep):
-    def __init__(self) -> None:
-        self.A = np.array([[0, 0, 0], [1 / 3, 0, 0], [0, 2 / 3, 0]])
-        self.B = np.array([1 / 4, 0, 3 / 4])
-        self.C = np.array([0, 1 / 3, 2 / 3])
-        self.order = 3
-        super().__init__()
+    A = np.array([[0, 0, 0], [1 / 3, 0, 0], [0, 2 / 3, 0]])
+    B = np.array([1 / 4, 0, 3 / 4])
+    C = np.array([0, 1 / 3, 2 / 3])
+    order = 3
 
 
 class _Wray3Step(_RungeKuttaStep):
-    def __init__(self) -> None:
-        self.A = np.array([[0, 0, 0], [8 / 15, 0, 0], [1 / 4, 5 / 12, 0]])
-        self.B = np.array([1 / 4, 0, 3 / 4])
-        self.C = np.array([0, 8 / 15, 2 / 3])
-        self.order = 3
-        super().__init__()
+    A = np.array([[0, 0, 0], [8 / 15, 0, 0], [1 / 4, 5 / 12, 0]])
+    B = np.array([1 / 4, 0, 3 / 4])
+    C = np.array([0, 8 / 15, 2 / 3])
+    order = 3
 
 
 class _Ralston3Step(_RungeKuttaStep):
-    def __init__(self) -> None:
-        self.A = np.array([[0, 0, 0], [1 / 2, 0, 0], [0, 3 / 4, 0]])
-        self.B = np.array([2 / 9, 1 / 3, 4 / 9])
-        self.C = np.array([0, 1 / 2, 3 / 4])
-        self.order = 3
-        super().__init__()
+    A = np.array([[0, 0, 0], [1 / 2, 0, 0], [0, 3 / 4, 0]])
+    B = np.array([2 / 9, 1 / 3, 4 / 9])
+    C = np.array([0, 1 / 2, 3 / 4])
+    order = 3
 
 
 class _SSPRK3Step(_RungeKuttaStep):
-    def __init__(self) -> None:
-        self.A = np.array([[0, 0, 0], [1, 0, 0], [1 / 4, 1 / 4, 0]])
-        self.B = np.array([1 / 6, 1 / 6, 2 / 3])
-        self.C = np.array([0, 1, 1 / 2])
-        self.order = 3
-        super().__init__()
+    A = np.array([[0, 0, 0], [1, 0, 0], [1 / 4, 1 / 4, 0]])
+    B = np.array([1 / 6, 1 / 6, 2 / 3])
+    C = np.array([0, 1, 1 / 2])
+    order = 3
 
 
 class _RK4Step(_RungeKuttaStep):
-    def __init__(self) -> None:
-        self.A = np.array([[0, 0, 0, 0], [0.5, 0, 0, 0], [0, 0.5, 0, 0], [0, 0, 1, 0]])
-        self.B = np.array([1 / 6, 1 / 3, 1 / 3, 1 / 6])
-        self.C = np.array([0, 0.5, 0.5, 1])
-        self.order = 4
-        super().__init__()
+    A = np.array([[0, 0, 0, 0], [0.5, 0, 0, 0], [0, 0.5, 0, 0], [0, 0, 1, 0]])
+    B = np.array([1 / 6, 1 / 3, 1 / 3, 1 / 6])
+    C = np.array([0, 0.5, 0.5, 1])
+    order = 4
 
 
 class _RK38Step(_RungeKuttaStep):
-    def __init__(self) -> None:
-        self.A = np.array(
-            [[0, 0, 0, 0], [1 / 3, 0, 0, 0], [-1 / 3, 1, 0, 0], [1, -1, 1, 0]]
-        )
-        self.B = np.array([1 / 8, 3 / 8, 3 / 8, 1 / 8])
-        self.C = np.array([0, 1 / 3, 2 / 3, 1])
-        self.order = 4
-        super().__init__()
+    A = np.array([[0, 0, 0, 0], [1 / 3, 0, 0, 0], [-1 / 3, 1, 0, 0], [1, -1, 1, 0]])
+
+    B = np.array([1 / 8, 3 / 8, 3 / 8, 1 / 8])
+    C = np.array([0, 1 / 3, 2 / 3, 1])
+    order = 4
 
 
 class _Ralston4Step(_RungeKuttaStep):
-    def __init__(self) -> None:
-        self.A = np.array(
-            [
-                [0, 0, 0, 0],
-                [0.4, 0, 0, 0],
-                [0.29697761, 0.15875964, 0, 0],
-                [0.21810040, -3.050965161, 3.83286476, 0],
-            ]
-        )
-        self.B = np.array([0.17476028, -0.55148066, 1.20553560, 0.17118478])
-        self.C = np.array([0, 0.4, 0.45573725, 1])
-        self.order = 4
-        super().__init__()
+    A = np.array(
+        [
+            [0, 0, 0, 0],
+            [0.4, 0, 0, 0],
+            [0.29697761, 0.15875964, 0, 0],
+            [0.21810040, -3.050965161, 3.83286476, 0],
+        ]
+    )
+    B = np.array([0.17476028, -0.55148066, 1.20553560, 0.17118478])
+    C = np.array([0, 0.4, 0.45573725, 1])
+    order = 4
 
 
 # Embedded Error Estimate Steps
 
 
 class _BogackiShampineStep(_RungeKuttaStep):
-    def __init__(self) -> None:
-        self.A = np.array(
-            [[0, 0, 0, 0], [1 / 2, 0, 0, 0], [0, 3 / 4, 0, 0], [2 / 9, 1 / 3, 4 / 9, 0]]
-        )
-        self.B = np.array([2 / 9, 1 / 3, 4 / 9, 0])
-        self.B_hat = np.array([7 / 24, 1 / 4, 1 / 3, 1 / 8])
-        self.C = np.array([0, 1 / 2, 3 / 4, 1])
-        self.order = 3
-        super().__init__()
+    A = np.array(
+        [[0, 0, 0, 0], [1 / 2, 0, 0, 0], [0, 3 / 4, 0, 0], [2 / 9, 1 / 3, 4 / 9, 0]]
+    )
+    B = np.array([2 / 9, 1 / 3, 4 / 9, 0])
+    B_hat = np.array([7 / 24, 1 / 4, 1 / 3, 1 / 8])
+    C = np.array([0, 1 / 2, 3 / 4, 1])
+    order = 3
 
 
 class _RKF45Step(_RungeKuttaStep):
-    def __init__(self) -> None:
-        self.A = np.array(
-            [
-                [0, 0, 0, 0, 0, 0],
-                [1 / 4, 0, 0, 0, 0, 0],
-                [3 / 32, 9 / 32, 0, 0, 0, 0],
-                [1932 / 2197, -7200 / 2197, 7296 / 2197, 0, 0, 0],
-                [439 / 216, -8, 3680 / 513, -845 / 4104, 0, 0],
-                [-8 / 27, 2, -3544 / 2565, 1859 / 4104, -11 / 40, 0],
-            ]
-        )
-        self.B = np.array([16 / 135, 0, 6656 / 12825, 28561 / 56430, -9 / 50, 2 / 55])
-        self.B_hat = np.array([25 / 216, 0, 1408 / 2565, 2197 / 4104, -1 / 5, 0])
-        self.C = np.array([0, 1 / 4, 3 / 8, 12 / 13, 1, 1 / 2])
-        self.order = 5
-        super().__init__()
+    A = np.array(
+        [
+            [0, 0, 0, 0, 0, 0],
+            [1 / 4, 0, 0, 0, 0, 0],
+            [3 / 32, 9 / 32, 0, 0, 0, 0],
+            [1932 / 2197, -7200 / 2197, 7296 / 2197, 0, 0, 0],
+            [439 / 216, -8, 3680 / 513, -845 / 4104, 0, 0],
+            [-8 / 27, 2, -3544 / 2565, 1859 / 4104, -11 / 40, 0],
+        ]
+    )
+    B = np.array([16 / 135, 0, 6656 / 12825, 28561 / 56430, -9 / 50, 2 / 55])
+    B_hat = np.array([25 / 216, 0, 1408 / 2565, 2197 / 4104, -1 / 5, 0])
+    C = np.array([0, 1 / 4, 3 / 8, 12 / 13, 1, 1 / 2])
+    order = 5
 
 
 # =====================================================================================
@@ -428,8 +416,8 @@ def solve_ivp(
     *,
     method: str,
     h: Optional[float] = None,
-    r_tol: float = 0.,
-    a_tol: float = 0.,
+    r_tol: float = 0.0,
+    a_tol: float = 0.0,
     max_step: float = np.inf,
 ) -> ODEResult:
     if not callable(f):
@@ -459,7 +447,7 @@ def solve_ivp(
     def f_wrapper(t, y):
         return np.asarray(f(t, y))
 
-    method_step = _all_methods[method]()
+    method_step = _all_methods[method]()  # type: ignore
 
     if h is None:
         # compute initial step size
