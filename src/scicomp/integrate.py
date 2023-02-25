@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import inspect
+import math
 from dataclasses import dataclass
 from typing import Callable
-import math
 
 import numpy as np
 
@@ -410,8 +410,8 @@ def _estimate_initial_step_size(f, y0, t0, method, r_tol, a_tol, max_step):
         h1 = np.maximum(1e-6, h0 * 1e-3)
     else:
         h1 = (0.01 / np.maximum(d1, d2)) ** (1 / (method.order + 1))
-    h = np.maximum(100*h0, h1)
-    return h1 if h1 < max_step else max_step
+    h = np.maximum(100 * h0, h1)
+    return h if h < max_step else max_step
 
 
 def solve_ivp(
@@ -456,7 +456,9 @@ def solve_ivp(
 
     if h is None and (r_tol != 0 or a_tol != 0):
         # compute initial step size
-        h = _estimate_initial_step_size(f_wrapper, y0, t_span[0], method_step, r_tol, a_tol, max_step)
+        h = _estimate_initial_step_size(
+            f_wrapper, y0, t_span[0], method_step, r_tol, a_tol, max_step
+        )
 
     if method in _fixed_step_methods:
         if r_tol == 0 and a_tol == 0:
