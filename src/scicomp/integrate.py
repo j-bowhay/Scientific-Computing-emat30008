@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+import math
 from dataclasses import dataclass
 from typing import Callable
 
@@ -154,26 +155,6 @@ class _Ralston4Step(_RungeKuttaStep):
 
 
 # Embedded Error Estimate Steps
-
-
-class _HeunEulerStep(_RungeKuttaStep):
-    def __init__(self) -> None:
-        self.A = np.array([[0, 0], [1, 0]])
-        self.B = np.array([1 / 2, 1 / 2])
-        self.B_hat = np.array([1, 0])
-        self.C = np.array([0, 1])
-        self.order = 2
-        super().__init__()
-
-
-class _RKF12Step(_RungeKuttaStep):
-    def __init__(self) -> None:
-        self.A = np.array([[0, 0, 0], [1 / 2, 0, 0], [1 / 256, 255 / 256, 0]])
-        self.B = np.array([1 / 512, 255 / 256, 1 / 512])
-        self.B_hat = np.array([1 / 255, 255 / 256, 0])
-        self.C = np.array([0, 1 / 2, 1])
-        self.order = 2
-        super().__init__()
 
 
 class _BogackiShampineStep(_RungeKuttaStep):
@@ -400,11 +381,37 @@ _fixed_step_methods = {
 }
 
 _embedded_methods = {
-    "heun_euler": _HeunEulerStep,
-    "rkf12": _RKF12Step,
     "bogacki_shampine": _BogackiShampineStep,
     "rkf45": _RKF45Step,
 }
+
+_all_methods = {**_fixed_step_methods, **_embedded_methods}
+
+
+def _estimate_initial_step_size(f, y0, t0, method, r_tol, a_tol, max_step):
+    scale = a_tol + np.abs(y0) * r_tol
+    d0 = np.sqrt(np.sum((y0 / scale) ** 2) / y0.size)
+    # not sure if this should be a different scale?
+    f0 = f(t0, y0)
+    scale = a_tol + np.abs(f0) * r_tol
+    d1 = np.sqrt(np.sum((f0 / scale) ** 2) / y0.size)
+
+    if d0 < 1e-5 or d1 < 1e-5 or math.isnan(d0) or math.isnan(d1):
+        h0 = 1e-6
+    else:
+        h0 = 0.01 * (d0 / d1)
+
+    y1 = _EulerStep()(f, t0, y0, h0)
+    diff = f(t0 + h0, y1) - f(t0, y0)
+    scale = a_tol + np.abs(diff) * r_tol
+    d2 = np.sqrt(np.sum((diff / scale) ** 2) / y0.size) / h0
+
+    if np.maximum(d1, d2) <= 1e-15 or math.isnan(d1) or math.isnan(d2):
+        h1 = np.maximum(1e-6, h0 * 1e-3)
+    else:
+        h1 = (0.01 / np.maximum(d1, d2)) ** (1 / (method.order + 1))
+    h = np.maximum(100 * h0, h1)
+    return h if h < max_step else max_step
 
 
 def solve_ivp(
@@ -445,12 +452,15 @@ def solve_ivp(
     def f_wrapper(t, y):
         return np.asarray(f(t, y))
 
+    method_step = _all_methods[method]()
+
     if h is None and (r_tol != 0 or a_tol != 0):
         # compute initial step size
-        raise NotImplementedError
+        h = _estimate_initial_step_size(
+            f_wrapper, y0, t_span[0], method_step, r_tol, a_tol, max_step
+        )
 
     if method in _fixed_step_methods:
-        method = _fixed_step_methods[method]()
         if r_tol == 0 and a_tol == 0:
             # run in fixed mode
             return _solve_to_fixed_step(f_wrapper, y0, t_span, h, method)
@@ -460,20 +470,19 @@ def solve_ivp(
                 y0,
                 t_span,
                 h,
-                method,
+                method_step,
                 r_tol,
                 a_tol,
                 max_step,
                 _richardson_error_estimate,
             )
     elif method in _embedded_methods:
-        method = _embedded_methods[method]()
         return _solve_to_adaptive(
             f_wrapper,
             y0,
             t_span,
             h,
-            method,
+            method_step,
             r_tol,
             a_tol,
             max_step,
