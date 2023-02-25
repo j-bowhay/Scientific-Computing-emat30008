@@ -3,6 +3,7 @@ from __future__ import annotations
 import inspect
 from dataclasses import dataclass
 from typing import Callable
+import math
 
 import numpy as np
 
@@ -409,26 +410,30 @@ _embedded_methods = {
 _all_methods = {**_fixed_step_methods, **_embedded_methods}
 
 
-def _estimate_initial_step_size(f, y0, t0, method, r_tol, a_tol):
+def _estimate_initial_step_size(f, y0, t0, method, r_tol, a_tol, max_step):
     scale = a_tol + np.abs(y0) * r_tol
     d0 = np.sqrt(np.sum((y0 / scale) ** 2) / y0.size)
     # not sure if this should be a different scale?
-    d1 = np.sqrt(np.sum((f(t0, y0) / scale) ** 2) / y0.size)
+    f0 = f(t0, y0)
+    scale = a_tol + np.abs(f0) * r_tol
+    d1 = np.sqrt(np.sum((f0 / scale) ** 2) / y0.size)
 
-    if d0 < 1e-5 or d1 < 1e-5:
+    if d0 < 1e-5 or d1 < 1e-5 or math.isnan(d0) or math.isnan(d1):
         h0 = 1e-6
     else:
         h0 = 0.01 * (d0 / d1)
 
     y1 = _EulerStep()(f, t0, y0, h0)
-    d2 = np.sqrt(np.sum((f(t0 + h0, y1) - f(t0, y0) / scale) ** 2) / y0.size) / h0
+    diff = f(t0 + h0, y1) - f(t0, y0)
+    scale = a_tol + np.abs(diff) * r_tol
+    d2 = np.sqrt(np.sum((diff / scale) ** 2) / y0.size) / h0
 
-    if np.maximum(d1, d2) <= 1e-15:
+    if np.maximum(d1, d2) <= 1e-15 or math.isnan(d1) or math.isnan(d2):
         h1 = np.maximum(1e-6, h0 * 1e-3)
     else:
         h1 = (0.01 / np.maximum(d1, d2)) ** (1 / (method.order + 1))
-    print(h1)
-    return h1
+    h = np.maximum(100*h0, h1)
+    return h1 if h1 < max_step else max_step
 
 
 def solve_ivp(
@@ -473,7 +478,7 @@ def solve_ivp(
 
     if h is None and (r_tol != 0 or a_tol != 0):
         # compute initial step size
-        h = _estimate_initial_step_size(f, y0, t_span[0], method_step, r_tol, a_tol)
+        h = _estimate_initial_step_size(f_wrapper, y0, t_span[0], method_step, r_tol, a_tol, max_step)
 
     if method in _fixed_step_methods:
         if r_tol == 0 and a_tol == 0:
