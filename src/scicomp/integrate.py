@@ -447,7 +447,10 @@ def solve_ivp(
     def f_wrapper(t, y):
         return np.asarray(f(t, y))
 
-    method_step = _all_methods[method]()  # type: ignore
+    if method in _all_methods.keys():
+        method_step = _all_methods[method]()  # type: ignore
+    else:
+        raise ValueError(f"{method} is not a valid option for 'method'")
 
     if h is None:
         # compute initial step size
@@ -483,5 +486,3 @@ def solve_ivp(
             max_step,
             _embedded_error_estimate,
         )
-    else:
-        raise ValueError(f"{method} is not a valid option for 'method'")
