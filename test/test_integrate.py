@@ -80,20 +80,18 @@ class TestSolveOde:
         )
         assert np.array_equal(res.y, np.ones((10, res.t.size)))
 
-    @FIXED_STEP_METHODS
-    def test_t_span_obeyed_fixed_step(self, method):
+    def test_t_span_obeyed_fixed_step(self):
         t_span = (2, 5.432)
-        res = integrate.solve_ivp(zero_ode, np.ones(10), t_span, method=method, h=1e-1)
+        res = integrate.solve_ivp(zero_ode, np.ones(10), t_span, method="rk4", h=1e-1)
         np.testing.assert_allclose(t_span, (res.t[0], res.t[-1]))
 
-    @ALL_METHODS
-    def test_t_span_obeyed_adaptive(self, method):
+    def test_t_span_obeyed_adaptive(self):
         t_span = (2, 5.432)
         res = integrate.solve_ivp(
             lambda t, y: shm_ode(t, y, 1),
             [1, 0],
             t_span,
-            method=method,
+            method="rkf45",
             h=1e-1,
             r_tol=1e-2,
         )

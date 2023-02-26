@@ -202,6 +202,45 @@ class _RKF45Step(_RungeKuttaStep):
     order = 5
 
 
+class _CashKarpStep(_RungeKuttaStep):
+    A = np.array(
+        [
+            [0, 0, 0, 0, 0, 0],
+            [1 / 5, 0, 0, 0, 0, 0],
+            [3 / 40, 9 / 40, 0, 0, 0, 0],
+            [3 / 10, -9 / 10, 6 / 5, 0, 0, 0],
+            [-11 / 54, 5 / 2, -70 / 27, 35 / 27, 0, 0],
+            [1631 / 55296, 175 / 512, 575 / 13824, 44275 / 110592, 253 / 4096, 0],
+        ]
+    )
+    B = np.array([37 / 378, 0, 250 / 621, 125 / 594, 0, 512 / 1771])
+    B_hat = np.array(
+        [2825 / 27648, 0, 18575 / 48384, 13525 / 55296, 277 / 14336, 1 / 4]
+    )
+    C = np.array([0, 1 / 5, 3 / 10, 3 / 5, 1, 7 / 8])
+    order = 5
+
+
+class _DomandPrinceStep(_RungeKuttaStep):
+    A = np.array(
+        [
+            [0, 0, 0, 0, 0, 0, 0],
+            [1 / 5, 0, 0, 0, 0, 0, 0],
+            [3 / 40, 9 / 40, 0, 0, 0, 0, 0],
+            [44 / 45, -56 / 15, 32 / 9, 0, 0, 0, 0],
+            [19372 / 6561, -25360 / 2187, 64448 / 6561, -212 / 729, 0, 0, 0],
+            [9017 / 3168, -355 / 33, 46732 / 5247, 49 / 176, -5103 / 18656, 0, 0],
+            [35 / 384, 0, 500 / 1113, 125 / 192, -2187 / 6784, 11 / 84, 0],
+        ]
+    )
+    B = np.array([35 / 384, 0, 500 / 1113, 125 / 192, -2187 / 6784, 11 / 84, 0])
+    B_hat = np.array(
+        [5179 / 57600, 0, 7571 / 16695, 393 / 640, -92097 / 339200, 187 / 2100, 1 / 40]
+    )
+    C = np.array([0, 1 / 5, 3 / 10, 4 / 5, 8 / 9, 1, 1])
+    order = 5
+
+
 # =====================================================================================
 # Stepper Routines
 # =====================================================================================
@@ -287,7 +326,7 @@ def _solve_to_adaptive(
     # Check if integration is finished
     while (t[-1] - t_span[-1]) < 0:
         step_accepted = False
-        min_step = 10 * np.abs(np.nextafter(t[-1], np.inf) - t[-1])
+        min_step = 10 * (np.nextafter(t[-1], np.inf) - t[-1])
         while not step_accepted:
             y1, local_err = error_estimate(f, t[-1], y[-1], h, method)
 
@@ -347,6 +386,8 @@ _fixed_step_methods = {
 _embedded_methods = {
     "bogacki_shampine": _BogackiShampineStep,
     "rkf45": _RKF45Step,
+    "ck45": _CashKarpStep,
+    "dopri45": _DomandPrinceStep,
 }
 
 _all_methods = {**_fixed_step_methods, **_embedded_methods}
