@@ -10,6 +10,17 @@ import numpy as np
 import numpy.typing as npt
 
 # =====================================================================================
+# Utils
+# =====================================================================================
+
+def _scale(r_tol, a_tol, *args):
+    if len(args) > 1:
+        y = np.maximum(*tuple(map(np.abs, args)))
+    else:
+        y = np.abs(args[0])
+    return a_tol + y * r_tol
+
+# =====================================================================================
 # Step Routines
 # =====================================================================================
 
@@ -317,7 +328,7 @@ def _solve_to_adaptive(
         while not step_accepted:
             y1, local_err = error_estimate(f, t[-1], y[-1], h, method)
 
-            scale = a_tol + np.maximum(np.abs(y1), np.abs(y[-1])) * r_tol
+            scale = _scale(r_tol, a_tol, y1, y[-1])
 
             # eq 4.11 page 168 Hairer
             err = np.sqrt(np.sum((local_err / scale) ** 2) / local_err.size)
@@ -374,11 +385,11 @@ _all_methods = {**_fixed_step_methods, **_embedded_methods}
 
 
 def _estimate_initial_step_size(f, y0, t0, method, r_tol, a_tol, max_step):
-    scale = a_tol + np.abs(y0) * r_tol
+    scale = _scale(r_tol, a_tol, y0)
     d0 = np.sqrt(np.sum((y0 / scale) ** 2) / y0.size)
     # not sure if this should be a different scale?
     f0 = f(t0, y0)
-    scale = a_tol + np.abs(f0) * r_tol
+    scale = _scale(r_tol, a_tol, f0)
     d1 = np.sqrt(np.sum((f0 / scale) ** 2) / y0.size)
 
     if d0 < 1e-5 or d1 < 1e-5 or math.isnan(d0) or math.isnan(d1):
@@ -388,7 +399,7 @@ def _estimate_initial_step_size(f, y0, t0, method, r_tol, a_tol, max_step):
 
     y1 = _EulerStep()(f, t0, y0, h0).y
     diff = f(t0 + h0, y1) - f(t0, y0)
-    scale = a_tol + np.abs(diff) * r_tol
+    scale = _scale(r_tol, a_tol, diff)
     d2 = np.sqrt(np.sum((diff / scale) ** 2) / y0.size) / h0
 
     if np.maximum(d1, d2) <= 1e-15 or math.isnan(d1) or math.isnan(d2):
