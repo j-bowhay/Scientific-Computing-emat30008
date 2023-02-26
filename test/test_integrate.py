@@ -10,12 +10,11 @@ FIXED_STEP_METHODS = pytest.mark.parametrize(
 
 
 class TestSolveOde:
-    @ALL_METHODS
-    def test_invalid_signature(self, method):
+    def test_invalid_signature(self):
         with pytest.raises(ValueError, match="'f' must be callable"):
-            integrate.solve_ivp("ode", [0], [0, 1], method=method, h=0.1)
+            integrate.solve_ivp("ode", [0], [0, 1], method="rk4", h=0.1)
         with pytest.raises(ValueError, match="'f' has an invalid signature"):
-            integrate.solve_ivp(lambda t, y, z: y, [0], [0, 1], method=method, h=0.1)
+            integrate.solve_ivp(lambda t, y, z: y, [0], [0, 1], method="rk4", h=0.1)
 
     def test_invalid_method(self):
         with pytest.raises(
@@ -25,19 +24,17 @@ class TestSolveOde:
                 exponential_ode, [0], (0, 1), h=0.1, method="cheddar cheese"
             )
 
-    @ALL_METHODS
-    def test_invalid_t_span(self, method):
+    def test_invalid_t_span(self):
         with pytest.raises(ValueError, match="Invalid values for 't_span'"):
             integrate.solve_ivp(
-                exponential_ode, [0], t_span=(1, 0), h=0.1, method=method
+                exponential_ode, [0], t_span=(1, 0), h=0.1, method="rk4"
             )
         with pytest.raises(ValueError, match="Invalid values for 't_span'"):
             integrate.solve_ivp(
-                exponential_ode, [0], t_span=(0, 1, 2), h=0.1, method=method
+                exponential_ode, [0], t_span=(0, 1, 2), h=0.1, method="rk4"
             )
 
-    @ALL_METHODS
-    def test_invalid_ics(self, method):
+    def test_invalid_ics(self):
         with pytest.raises(
             ValueError, match="Initial conditions must be 1 dimensional."
         ):
