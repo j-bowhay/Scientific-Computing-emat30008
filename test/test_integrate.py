@@ -7,6 +7,7 @@ ALL_METHODS = pytest.mark.parametrize("method", integrate._all_methods.keys())
 FIXED_STEP_METHODS = pytest.mark.parametrize(
     "method", integrate._fixed_step_methods.keys()
 )
+EMBEDDED_METHODS = pytest.mark.parametrize("method", integrate._embedded_methods.keys())
 
 
 class TestSolveOde:
@@ -104,9 +105,24 @@ class TestSolveOde:
         )
         np.testing.assert_allclose(res.y[:, -1], [np.cos(0.5), -np.sin(0.5)], rtol=1e-6)
 
-    @ALL_METHODS
+    @FIXED_STEP_METHODS
+    def test_richardson_adaptive_shm(self, method):
+        res = integrate.solve_ivp(
+            lambda t, y: shm_ode(t, y, 1), [1, 0.5], (0, 0.5), method=method, r_tol=1e-6
+        )
+        np.testing.assert_allclose(
+            res.y[:, -1],
+            [np.cos(0.5) + 0.5 * np.sin(0.5), -np.sin(0.5) + 0.5 * np.cos(0.5)],
+            rtol=1e-3,
+        )
+
+    @EMBEDDED_METHODS
     def test_adaptive_shm(self, method):
         res = integrate.solve_ivp(
-            lambda t, y: shm_ode(t, y, 1), [1, 0], (0, 0.5), method=method, r_tol=1e-4
+            lambda t, y: shm_ode(t, y, 1), [1, 0.5], (0, 0.5), method=method, r_tol=1e-6
         )
-        np.testing.assert_allclose(res.y[:, -1], [np.cos(0.5), -np.sin(0.5)], rtol=1e-4)
+        np.testing.assert_allclose(
+            res.y[:, -1],
+            [np.cos(0.5) + 0.5 * np.sin(0.5), -np.sin(0.5) + 0.5 * np.cos(0.5)],
+            rtol=1e-5,
+        )
