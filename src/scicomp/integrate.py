@@ -295,9 +295,9 @@ def _solve_to_adaptive(
             fac_max = 1.5
             fac_min = 0.5
             safety_fac = 0.9
-            h_new = h * np.minimum(
+            h_new = h * min(
                 fac_max,
-                np.maximum(fac_min, safety_fac * (1 / err) ** (1 / (method.order + 1))),
+                max(fac_min, safety_fac * (1 / err) ** (1 / (method.order + 1))),
             )
             h_new = max_step if h_new > max_step else h_new
 
@@ -359,11 +359,11 @@ def _estimate_initial_step_size(f, y0, t0, method, r_tol, a_tol, max_step):
     scale = _scale(r_tol, a_tol, diff)
     d2 = _error_norm(diff / scale)
 
-    if np.maximum(d1, d2) <= 1e-15 or math.isnan(d1) or math.isnan(d2):
-        h1 = np.maximum(1e-6, h0 * 1e-3)
+    if max(d1, d2) <= 1e-15 or math.isnan(d1) or math.isnan(d2):
+        h1 = max(1e-6, h0 * 1e-3)
     else:
-        h1 = (0.01 / np.maximum(d1, d2)) ** (1 / (method.order + 1))
-    h = np.maximum(100 * h0, h1)
+        h1 = (0.01 / max(d1, d2)) ** (1 / (method.order + 1))
+    h = max(100 * h0, h1)
     return h if h < max_step else max_step
 
 
