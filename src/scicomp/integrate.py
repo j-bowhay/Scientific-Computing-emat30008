@@ -20,6 +20,9 @@ def _scale(r_tol, a_tol, *args):
         y = np.abs(args[0])
     return a_tol + y * r_tol
 
+def _error_norm(x,/):
+    return np.linalg.norm(x) / (x.size ** 0.5)
+
 # =====================================================================================
 # Step Routines
 # =====================================================================================
@@ -286,8 +289,7 @@ def _solve_to_adaptive(
 
             scale = _scale(r_tol, a_tol, y1, y[-1])
 
-            # eq 4.11 page 168 Hairer
-            err = np.sqrt(np.sum((local_err / scale) ** 2) / local_err.size)
+            err = _error_norm(local_err / scale)
 
             # adjust step size
             fac_max = 1.5
@@ -342,11 +344,10 @@ _all_methods = {**_fixed_step_methods, **_embedded_methods}
 
 def _estimate_initial_step_size(f, y0, t0, method, r_tol, a_tol, max_step):
     scale = _scale(r_tol, a_tol, y0)
-    d0 = np.sqrt(np.sum((y0 / scale) ** 2) / y0.size)
-    # not sure if this should be a different scale?
+    d0 = _error_norm(y0 / scale)
     f0 = f(t0, y0)
     scale = _scale(r_tol, a_tol, f0)
-    d1 = np.sqrt(np.sum((f0 / scale) ** 2) / y0.size)
+    d1 = _error_norm(f0 / scale)
 
     if d0 < 1e-5 or d1 < 1e-5 or math.isnan(d0) or math.isnan(d1):
         h0 = 1e-6
@@ -356,7 +357,7 @@ def _estimate_initial_step_size(f, y0, t0, method, r_tol, a_tol, max_step):
     y1 = _EulerStep()(f, t0, y0, h0).y
     diff = f(t0 + h0, y1) - f(t0, y0)
     scale = _scale(r_tol, a_tol, diff)
-    d2 = np.sqrt(np.sum((diff / scale) ** 2) / y0.size) / h0
+    d2 = _error_norm(diff / scale)
 
     if np.maximum(d1, d2) <= 1e-15 or math.isnan(d1) or math.isnan(d2):
         h1 = np.maximum(1e-6, h0 * 1e-3)
