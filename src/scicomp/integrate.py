@@ -55,7 +55,7 @@ class _RungeKuttaStep(ABC):
 
         # return the error estimate if there is an embedded formula
         if hasattr(self, "B_hat"):
-            return _StepResult(y1, np.inner(self.B - self.B_hat, ks))
+            return _StepResult(y1, h*np.inner(self.B - self.B_hat, ks))
         return _StepResult(y1)
 
 

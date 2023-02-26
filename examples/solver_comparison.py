@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import numpy as np
 import scipy
 from scicomp.integrate import solve_ivp
 from scicomp.odes import predator_prey
@@ -14,7 +15,7 @@ res = solve_ivp(
     t_span=(0, 100),
     y0=y0,
     r_tol=1e-6,
-    method="euler",
+    method="rkf45",
 )
 res2 = scipy.integrate.solve_ivp(
     lambda t, y: predator_prey(t, y, a, b, d), (0, 100), y0, rtol=1e-6
