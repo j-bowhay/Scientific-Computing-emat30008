@@ -41,21 +41,32 @@ class TestSolveOde:
             integrate.solve_ivp(
                 exponential_ode, np.array([[1, 1], [1, 2]]), (0, 1), method="rk4", h=1
             )
-    
+
     def test_not_step_size_fixed(self):
         with pytest.raises(ValueError, match="size must be provided"):
-            integrate.solve_ivp(exponential_ode, [1], t_span=[0,1], method="rk4")
-    
+            integrate.solve_ivp(exponential_ode, [1], t_span=[0, 1], method="rk4")
+
     def test_negative_arg(self):
         with pytest.raises(ValueError, match="Invalid negative option."):
-            integrate.solve_ivp(exponential_ode, [1], t_span=[0,1], method="rk4", h=-1)
+            integrate.solve_ivp(exponential_ode, [1], t_span=[0, 1], method="rk4", h=-1)
         with pytest.raises(ValueError, match="Invalid negative option."):
-            integrate.solve_ivp(exponential_ode, [1], t_span=[0,1], method="rk4", r_tol=-1)
+            integrate.solve_ivp(
+                exponential_ode, [1], t_span=[0, 1], method="rk4", r_tol=-1
+            )
         with pytest.raises(ValueError, match="Invalid negative option."):
-            integrate.solve_ivp(exponential_ode, [1], t_span=[0,1], method="rk4", a_tol=-1)
+            integrate.solve_ivp(
+                exponential_ode, [1], t_span=[0, 1], method="rk4", a_tol=-1
+            )
         with pytest.raises(ValueError, match="Invalid negative option."):
-            integrate.solve_ivp(exponential_ode, [1], t_span=[0,1], method="rk4", r_tol=0.1, max_step=-1)
-    
+            integrate.solve_ivp(
+                exponential_ode,
+                [1],
+                t_span=[0, 1],
+                method="rk4",
+                r_tol=0.1,
+                max_step=-1,
+            )
+
     @FIXED_STEP_METHODS
     def test_zero_ode(self, method):
         res = integrate.solve_ivp(zero_ode, np.ones(10), [0, 5], method=method, h=1e-1)
@@ -92,3 +103,10 @@ class TestSolveOde:
             lambda t, y: shm_ode(t, y, 1), [1, 0], (0, 0.5), method=method, h=1e-6
         )
         np.testing.assert_allclose(res.y[:, -1], [np.cos(0.5), -np.sin(0.5)], rtol=1e-6)
+
+    @ALL_METHODS
+    def test_adaptive_shm(self, method):
+        res = integrate.solve_ivp(
+            lambda t, y: shm_ode(t, y, 1), [1, 0], (0, 0.5), method=method, r_tol=1e-4
+        )
+        np.testing.assert_allclose(res.y[:, -1], [np.cos(0.5), -np.sin(0.5)], rtol=1e-4)

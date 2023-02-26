@@ -433,10 +433,8 @@ def solve_ivp(
 
     if h is None and r_tol == 0 and a_tol == 0:
         # If running in fixed step mode the user must provide the step size
-        raise ValueError(
-            "Step size must be provided if running in fixed step mode"
-        )
-    
+        raise ValueError("Step size must be provided if running in fixed step mode")
+
     if max_step < 0 or (h is not None and h < 0) or r_tol < 0 or a_tol < 0:
         raise ValueError("Invalid negative option.")
 
