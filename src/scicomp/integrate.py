@@ -214,26 +214,6 @@ def _solve_to_fixed_step(
     h: float,
     method: _RungeKuttaStep,
 ) -> ODEResult:
-    """Solves an ivp by taking fixed steps.
-
-    Parameters
-    ----------
-    f : callable
-        The rhs function for the ODE.
-    y0 : np.ndarray
-        The initial conditions.
-    t_span : tuple[float, float]
-        The time range to solve over.
-    h : float
-        The fixed step size to use.
-    method : callable
-        Function that returns the next step of the ODE.
-
-    Returns
-    -------
-    ODEResult
-        Results object containing the solution of the IVP.
-    """
     t = [t_span[0]]
     y = [np.asarray(y0)]
 
@@ -293,34 +273,6 @@ def _solve_to_adaptive(
     max_step: float,
     error_estimate: Callable,
 ) -> ODEResult:
-    """_summary_
-
-    Parameters
-    ----------
-    f : callable
-        The rhs function for the ODE.
-    y0 : np.ndarray
-        The initial conditions.
-    t_span : tuple[float, float]
-        The time range to solve over.
-    h : float
-        The initial step size to use.
-    method : callable
-        Function that returns the next step of the ODE.
-    r_tol : float
-        The relative tolerance (the correct number of digits).
-    a_tol : float
-        The absolute tolerance (the correct number of decimal places).
-    max_step : float
-        The maximum acceptable step size to take.
-    error_estimate : callable
-        The function which generates the next point, error estimate and the scale
-
-    Returns
-    -------
-    ODEResult
-        Results object containing the solution of the IVP.
-    """
     t = [t_span[0]]
     y = [np.asarray(y0)]
 
