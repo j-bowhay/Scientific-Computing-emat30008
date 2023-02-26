@@ -49,6 +49,10 @@ class _RungeKuttaStep(ABC):
     @abstractproperty
     def order(self) -> int:
         ...
+    
+    @property
+    def B_hat(self) -> Optional[np.ndarray]:
+        return None
 
     def __init__(self) -> None:
         self.s = self.B.size
@@ -65,7 +69,7 @@ class _RungeKuttaStep(ABC):
         y1 = y + h * np.inner(self.B, ks)
 
         # return the error estimate if there is an embedded formula
-        if hasattr(self, "B_hat"):
+        if self.B_hat is not None:
             return _StepResult(y1, h * np.inner(self.B - self.B_hat, ks))
         return _StepResult(y1)
 
