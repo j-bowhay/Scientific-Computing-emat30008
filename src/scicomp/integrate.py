@@ -13,15 +13,18 @@ import numpy.typing as npt
 # Utils
 # =====================================================================================
 
-def _scale(r_tol, a_tol, *args):
+
+def _scale(r_tol: float, a_tol: float, *args) -> np.ndarray:
     if len(args) > 1:
         y = np.maximum(*tuple(map(np.abs, args)))
     else:
         y = np.abs(args[0])
     return a_tol + y * r_tol
 
-def _error_norm(x,/):
-    return np.linalg.norm(x) / (x.size ** 0.5)
+
+def _error_norm(x: np.ndarray, /) -> float:
+    return np.linalg.norm(x) / (x.size**0.5)
+
 
 # =====================================================================================
 # Step Routines
@@ -52,7 +55,7 @@ class _RungeKuttaStep(ABC):
     @abstractproperty
     def order(self) -> int:
         ...
-    
+
     @property
     def B_hat(self) -> Optional[np.ndarray]:
         return None
@@ -233,11 +236,11 @@ def _solve_to_fixed_step(
 
 def _richardson_error_estimate(
     f: Callable,
-    t: list,
-    y: list,
+    t: float,
+    y: np.ndarray,
     h: float,
     method: _RungeKuttaStep,
-):
+) -> tuple[np.ndarray, float]:
     # take two small steps to find y1
     y1 = y
     for i in range(2):
@@ -253,11 +256,11 @@ def _richardson_error_estimate(
 
 def _embedded_error_estimate(
     f: Callable,
-    t: list,
-    y: list,
+    t: float,
+    y: np.ndarray,
     h: float,
     method: _RungeKuttaStep,
-):
+) -> tuple:
     step = method(f, t, y, h)
     y1 = step.y
     local_err = step.error_estimate
@@ -303,7 +306,10 @@ def _solve_to_adaptive(
             h_new = max_step if h_new > max_step else h_new
 
             if h_new < min_step:
-                raise RuntimeError("Reached minimum possible step size without error reaching tolerance.")
+                raise RuntimeError(
+                    "Reached minimum possible step size without error reaching"
+                    " tolerance."
+                )
 
             # accept the step
             if (err <= 1 and h <= max_step) or final_step:
@@ -424,9 +430,9 @@ def solve_ivp(
     if method in _fixed_step_methods:
         if r_tol == 0 and a_tol == 0:
             # run in fixed mode
-            return _solve_to_fixed_step(f_wrapper, y0, t_span, h, method_step)
+            res = _solve_to_fixed_step(f_wrapper, y0, t_span, h, method_step)
         else:
-            return _solve_to_adaptive(
+            res = _solve_to_adaptive(
                 f_wrapper,
                 y0,
                 t_span,
@@ -438,7 +444,7 @@ def solve_ivp(
                 _richardson_error_estimate,
             )
     elif method in _embedded_methods:
-        return _solve_to_adaptive(
+        res = _solve_to_adaptive(
             f_wrapper,
             y0,
             t_span,
@@ -449,3 +455,4 @@ def solve_ivp(
             max_step,
             _embedded_error_estimate,
         )
+    return res

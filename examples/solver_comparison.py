@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-import numpy as np
 import scipy
 from scicomp.integrate import solve_ivp
 from scicomp.odes import predator_prey
