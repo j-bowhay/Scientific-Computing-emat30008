@@ -55,7 +55,7 @@ class _RungeKuttaStep(ABC):
 
         # return the error estimate if there is an embedded formula
         if hasattr(self, "B_hat"):
-            return _StepResult(y1, h*np.inner(self.B - self.B_hat, ks))
+            return _StepResult(y1, h * np.inner(self.B - self.B_hat, ks))
         return _StepResult(y1)
 
 
@@ -239,24 +239,18 @@ def _richardson_error_estimate(
     y: list,
     h: float,
     method: _RungeKuttaStep,
-    r_tol: float,
-    a_tol: float,
 ):
-    # take two small steps to find y2
-    y1 = y[-1]
-    for _ in range(2):
-        y1 = method(f, t[-1], y1, h / 2).y
+    # take two small steps to find y1
+    y1 = y
+    for i in range(2):
+        y1 = method(f, t + i * h, y1, h / 2).y
     # take one large step two find w
-    w = method(f, t[-1], y[-1], h).y
+    w = method(f, t, y, h).y
 
     # eq 4.4 page 165 Hairer Solving ODEs 1
     local_err = (y1 - w) / (2**method.order - 1)
 
-    # account for both relative and absolute error tolerances
-    # eq 4.10 page 167 Hairer Solving ODEs 1
-    scale = a_tol + np.maximum(np.abs(y1), np.abs(w)) * r_tol
-
-    return y1, local_err, scale
+    return y1, local_err
 
 
 def _embedded_error_estimate(
@@ -265,18 +259,12 @@ def _embedded_error_estimate(
     y: list,
     h: float,
     method: _RungeKuttaStep,
-    r_tol: float,
-    a_tol: float,
 ):
-    step = method(f, t[-1], y[-1], h)
+    step = method(f, t, y, h)
     y1 = step.y
     local_err = step.error_estimate
 
-    # account for both relative and absolute error tolerances
-    # eq 4.10 page 167 Hairer Solving ODEs 1
-    scale = a_tol + np.abs(y1) * r_tol
-
-    return y1, local_err, scale
+    return y1, local_err
 
 
 def _solve_to_adaptive(
@@ -327,7 +315,9 @@ def _solve_to_adaptive(
     while (t[-1] - t_span[-1]) < 0:
         step_accepted = False
         while not step_accepted:
-            y2, local_err, scale = error_estimate(f, t, y, h, method, r_tol, a_tol)
+            y1, local_err = error_estimate(f, t[-1], y[-1], h, method)
+
+            scale = a_tol + np.maximum(np.abs(y1), np.abs(y[-1])) * r_tol
 
             # eq 4.11 page 168 Hairer
             err = np.sqrt(np.sum((local_err / scale) ** 2) / local_err.size)
@@ -350,7 +340,7 @@ def _solve_to_adaptive(
                 else:
                     step_accepted = True
                     t.append(t[-1] + h)
-                    y.append(y2)
+                    y.append(y1)
             h = h_new
 
     return ODEResult(np.asarray(y).T, np.asarray(t))
