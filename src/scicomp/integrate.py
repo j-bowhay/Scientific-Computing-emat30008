@@ -420,9 +420,9 @@ def _estimate_initial_step_size(f, y0, t0, method, r_tol, a_tol, max_step):
 
 def solve_ivp(
     f: Callable,
+    *,
     y0: npt.ArrayLike,
     t_span: tuple[float, float],
-    *,
     method: str,
     h: Optional[float] = None,
     r_tol: float = 0.0,
