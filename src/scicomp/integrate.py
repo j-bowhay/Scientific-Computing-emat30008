@@ -15,6 +15,20 @@ import numpy.typing as npt
 
 
 def _scale(r_tol: float, a_tol: float, *args) -> np.ndarray:
+    """Calculates the scale term for the error norm. Based on eq 4.10 from Hairer.
+
+    Parameters
+    ----------
+    r_tol : float
+        The desired relative tolerance
+    a_tol : float
+        The desired absolute tolerance
+
+    Returns
+    -------
+    np.ndarray
+        Array containing the scale term for each component of the solution.
+    """
     if len(args) > 1:
         y = np.maximum(*tuple(map(np.abs, args)))
     else:
@@ -23,6 +37,18 @@ def _scale(r_tol: float, a_tol: float, *args) -> np.ndarray:
 
 
 def _error_norm(x: np.ndarray, /) -> float:
+    """Calculates the error norm based on eq 4.11 from Hairer.
+
+    Parameters
+    ----------
+    x : np.ndarray
+        Vector to compute the norm of
+
+    Returns
+    -------
+    float
+        Error norm of `x`
+    """
     return np.linalg.norm(x) / (x.size**0.5)
 
 
@@ -35,6 +61,8 @@ def _error_norm(x: np.ndarray, /) -> float:
 
 @dataclass
 class _StepResult:
+    """Used internally to store the result of a Runge Kutta step."""
+
     y: np.ndarray
     error_estimate: Optional[np.ndarray] = None
 
@@ -42,45 +70,85 @@ class _StepResult:
 class _RungeKuttaStep(ABC):
     @abstractproperty
     def A(self) -> np.ndarray:
+        """The ``A`` matrix of the Butcher tableau"""
         ...
 
     @abstractproperty
     def B(self) -> np.ndarray:
+        """The ``B`` vector of the Butcher tableau"""
         ...
 
     @abstractproperty
     def C(self) -> np.ndarray:
+        """The ``C`` vector of the Butcher tableau"""
         ...
 
     @abstractproperty
     def order(self) -> int:
+        """The order of the integrator"""
         ...
 
     @property
     def B_hat(self) -> Optional[np.ndarray]:
+        """The optional embedded error estimate of the integrator"""
         return None
 
     def __init__(self) -> None:
         self.s = self.B.size
 
     def __call__(self, f: Callable, t: float, y: np.ndarray, h: float) -> _StepResult:
-        ks = np.empty((y.size, self.s))
+        """Computes one step of the ode ``y' = f(t,y)``.
+
+        Based on the following equation,
+
+        .. math::
+
+            y_{n+1} = y_n + h \sum_{i=1}^s b_i k_i,
+
+        where
+
+        .. math::
+
+            k_i = f(t_n + c_i h, y_n + h \sum_{i=1}^s a_{ij}k_j).
+
+        Parameters
+        ----------
+        f : Callable
+            The rhs function.
+        t : float
+            The current time.
+        y : np.ndarray
+            The current state.
+        h : float
+            The step size.
+
+        Returns
+        -------
+        _StepResult
+            Result object containing the next value for `y` and the error estimate if
+            integrator has one.
+        """
+        k = np.empty((y.size, self.s))
+        # calculate k values
         for i in range(self.s):
-            ks[:, i] = f(
+            k[:, i] = f(
                 t + self.C[i] * h,
-                y
-                + h * np.sum(self.A[i, np.newaxis, : i + 1] * ks[:, : i + 1], axis=-1),
+                y + h * np.sum(self.A[i, np.newaxis, : i + 1] * k[:, : i + 1], axis=-1),
             )
 
-        y1 = y + h * np.inner(self.B, ks)
+        y1 = y + h * np.inner(self.B, k)
 
         # return the error estimate if there is an embedded formula
         if self.B_hat is not None:
-            return _StepResult(y1, h * np.inner(self.B - self.B_hat, ks))
+            return _StepResult(y1, h * np.inner(self.B - self.B_hat, k))
         return _StepResult(y1)
 
 
 class _EulerStep(_RungeKuttaStep):
+    """Defines Butcher Tableau for the Forward Euler method.
+    https://en.wikipedia.org/wiki/Euler_method
+    """
+
     A = np.array([[0]])
     B = np.array([1])
     C = np.array([0])
@@ -88,6 +156,10 @@ class _EulerStep(_RungeKuttaStep):
 
 
 class _ExplicitMidpointStep(_RungeKuttaStep):
+    """Defines the Butcher Tableau for the explicit midpoint method.
+    https://en.wikipedia.org/wiki/Midpoint_method
+    """
+
     A = np.array([[0, 0], [0.5, 0]])
     B = np.array([0, 1])
     C = np.array([0, 0.5])
@@ -95,6 +167,10 @@ class _ExplicitMidpointStep(_RungeKuttaStep):
 
 
 class _HeunsStep(_RungeKuttaStep):
+    """Defines the Butcher Tableau for Huan's method.
+    https://en.wikipedia.org/wiki/Heun%27s_method
+    """
+
     A = np.array([[0, 0], [1, 0]])
     B = np.array([0.5, 0.5])
     C = np.array([0, 1])
@@ -102,6 +178,8 @@ class _HeunsStep(_RungeKuttaStep):
 
 
 class _RalstonStep(_RungeKuttaStep):
+    """Defines the Butcher Tableau for Ralston's method."""
+
     A = np.array([[0, 0], [2 / 3, 0]])
     B = np.array([1 / 4, 3 / 4])
     C = np.array([0, 2 / 3])
@@ -109,6 +187,8 @@ class _RalstonStep(_RungeKuttaStep):
 
 
 class _Kutta3Step(_RungeKuttaStep):
+    """Defines the Butcher Tableau for Kutta's third-order method."""
+
     A = np.array([[0, 0, 0], [1 / 2, 0, 0], [-1, 2, 0]])
     B = np.array([1 / 6, 2 / 3, 1 / 6])
     C = np.array([0, 1 / 2, 1])
@@ -116,6 +196,8 @@ class _Kutta3Step(_RungeKuttaStep):
 
 
 class _Heun3Step(_RungeKuttaStep):
+    """Defines the Butcher Tableau for Heun's third-order method"""
+
     A = np.array([[0, 0, 0], [1 / 3, 0, 0], [0, 2 / 3, 0]])
     B = np.array([1 / 4, 0, 3 / 4])
     C = np.array([0, 1 / 3, 2 / 3])
@@ -123,6 +205,8 @@ class _Heun3Step(_RungeKuttaStep):
 
 
 class _Wray3Step(_RungeKuttaStep):
+    """Defines the Butcher Tableau for Van der Houwen's/Wray third-order method"""
+
     A = np.array([[0, 0, 0], [8 / 15, 0, 0], [1 / 4, 5 / 12, 0]])
     B = np.array([1 / 4, 0, 3 / 4])
     C = np.array([0, 8 / 15, 2 / 3])
@@ -130,6 +214,10 @@ class _Wray3Step(_RungeKuttaStep):
 
 
 class _Ralston3Step(_RungeKuttaStep):
+    """Define the Butcher Tableau for Ralston's third order method.
+    https://www.ams.org/journals/mcom/1962-16-080/S0025-5718-1962-0150954-0/
+    """
+
     A = np.array([[0, 0, 0], [1 / 2, 0, 0], [0, 3 / 4, 0]])
     B = np.array([2 / 9, 1 / 3, 4 / 9])
     C = np.array([0, 1 / 2, 3 / 4])
@@ -137,6 +225,10 @@ class _Ralston3Step(_RungeKuttaStep):
 
 
 class _SSPRK3Step(_RungeKuttaStep):
+    """Defines the Butcher Tableau for the Third-order Strong Stability Preserving
+    Runge-Kutta.
+    """
+
     A = np.array([[0, 0, 0], [1, 0, 0], [1 / 4, 1 / 4, 0]])
     B = np.array([1 / 6, 1 / 6, 2 / 3])
     C = np.array([0, 1, 1 / 2])
@@ -144,6 +236,8 @@ class _SSPRK3Step(_RungeKuttaStep):
 
 
 class _RK4Step(_RungeKuttaStep):
+    """Butcher Tableau for the classic fourth-order Rung-Kutta method."""
+
     A = np.array([[0, 0, 0, 0], [0.5, 0, 0, 0], [0, 0.5, 0, 0], [0, 0, 1, 0]])
     B = np.array([1 / 6, 1 / 3, 1 / 3, 1 / 6])
     C = np.array([0, 0.5, 0.5, 1])
@@ -151,6 +245,8 @@ class _RK4Step(_RungeKuttaStep):
 
 
 class _RK38Step(_RungeKuttaStep):
+    """Butcher Tableau for the Runge Kutta 3/8-rule fourth-order method"""
+
     A = np.array([[0, 0, 0, 0], [1 / 3, 0, 0, 0], [-1 / 3, 1, 0, 0], [1, -1, 1, 0]])
 
     B = np.array([1 / 8, 3 / 8, 3 / 8, 1 / 8])
@@ -159,6 +255,10 @@ class _RK38Step(_RungeKuttaStep):
 
 
 class _Ralston4Step(_RungeKuttaStep):
+    """Butcher Tableau for the Ralston's fourth order method.
+    https://www.ams.org/journals/mcom/1962-16-080/S0025-5718-1962-0150954-0/
+    """
+
     A = np.array(
         [
             [0, 0, 0, 0],
@@ -176,6 +276,11 @@ class _Ralston4Step(_RungeKuttaStep):
 
 
 class _BogackiShampineStep(_RungeKuttaStep):
+    """Butcher tableau for the second order Bogacki–Shampine method with a third order
+    embedded error estimate.
+    https://en.wikipedia.org/wiki/Bogacki%E2%80%93Shampine_method
+    """
+
     A = np.array(
         [[0, 0, 0, 0], [1 / 2, 0, 0, 0], [0, 3 / 4, 0, 0], [2 / 9, 1 / 3, 4 / 9, 0]]
     )
@@ -186,6 +291,11 @@ class _BogackiShampineStep(_RungeKuttaStep):
 
 
 class _RKF45Step(_RungeKuttaStep):
+    """Butcher Tableau for the fourth order Runge-Kutta-Fehlberg method with fifth order
+    error estimate.
+    https://en.wikipedia.org/wiki/Runge%E2%80%93Kutta%E2%80%93Fehlberg_method
+    """
+
     A = np.array(
         [
             [0, 0, 0, 0, 0, 0],
@@ -203,6 +313,11 @@ class _RKF45Step(_RungeKuttaStep):
 
 
 class _CashKarpStep(_RungeKuttaStep):
+    """Butcher Tableau for the fourth order Cash–Karp method with fifth order embedded
+    error estimate.
+    https://en.wikipedia.org/wiki/Cash%E2%80%93Karp_method
+    """
+
     A = np.array(
         [
             [0, 0, 0, 0, 0, 0],
@@ -222,6 +337,11 @@ class _CashKarpStep(_RungeKuttaStep):
 
 
 class _DomandPrinceStep(_RungeKuttaStep):
+    """Butcher Tableau for the fourth order Dormand–Prince method with fifth order
+    embedded error estimator.
+    https://en.wikipedia.org/wiki/Dormand%E2%80%93Prince_method
+    """
+
     A = np.array(
         [
             [0, 0, 0, 0, 0, 0, 0],
@@ -248,6 +368,15 @@ class _DomandPrinceStep(_RungeKuttaStep):
 
 @dataclass(frozen=True, slots=True)
 class ODEResult:
+    """Results object to store the solution of the ODE.
+
+    Has the following attributes:
+        y : np.ndarray
+            The solution of the system at each timestep
+        t : np.ndarray
+            Time points of the solution
+    """
+
     y: np.ndarray
     t: np.ndarray
 
@@ -259,6 +388,26 @@ def _solve_to_fixed_step(
     h: float,
     method: _RungeKuttaStep,
 ) -> ODEResult:
+    """Private function for solving an ODE using a fixed timestep.
+
+    Parameters
+    ----------
+    f : Callable
+        ODE to solve
+    y0 : np.ndarray
+        Initial condition
+    t_span : tuple[float, float]
+        Time span to solve over
+    h : float
+        Step size to use
+    method : _RungeKuttaStep
+        Stepper to use
+
+    Returns
+    -------
+    ODEResult
+        Solution to `f`
+    """
     t = [t_span[0]]
     y = [np.asarray(y0)]
 
@@ -279,7 +428,28 @@ def _richardson_error_estimate(
     y: np.ndarray,
     h: float,
     method: _RungeKuttaStep,
-) -> tuple[np.ndarray, float]:
+) -> tuple[np.ndarray, np.ndarray]:
+    """Error estimate for solving from ``y_n`` to ``y_n+1`` using Richardson
+    extrapolation.
+
+    Parameters
+    ----------
+    f : Callable
+        RHS of the ODE
+    t : float
+        Time of current state occurs at
+    y : np.ndarray
+        Current state of the ODE
+    h : float
+        Step size
+    method : _RungeKuttaStep
+        Stepper to use for integration
+
+    Returns
+    -------
+    tuple[np.ndarray, float]
+        Solution of the ODE at the next timestep and estimated error in getting there
+    """
     # take two small steps to find y1
     y1 = y
     for i in range(2):
@@ -299,7 +469,28 @@ def _embedded_error_estimate(
     y: np.ndarray,
     h: float,
     method: _RungeKuttaStep,
-) -> tuple:
+) -> tuple[np.ndarray, Optional[np.ndarray]]:
+    """Error estimate for solving from ``y_n`` to ``y_n+1`` using the steppers
+    embedded error estimate.
+
+    Parameters
+    ----------
+    f : Callable
+        RHS of the ODE
+    t : float
+        Time of current state occurs at
+    y : np.ndarray
+        Current state of the ODE
+    h : float
+        Step size
+    method : _RungeKuttaStep
+        Stepper to use for integration
+
+    Returns
+    -------
+    tuple[np.ndarray, float]
+        Solution of the ODE at the next timestep and estimated error in getting there
+    """
     step = method(f, t, y, h)
     y1 = step.y
     local_err = step.error_estimate
@@ -318,6 +509,43 @@ def _solve_to_adaptive(
     max_step: float,
     error_estimate: Callable,
 ) -> ODEResult:
+    """Private function for solving ODE using an adaptive timestep.
+
+    Parameters
+    ----------
+    f : Callable
+        RSH of the ODE.
+    y0 : np.ndarray
+        Initial conditions
+    t_span : tuple[float, float]
+        Time span to solve over
+    h : float
+        Initial timestep
+    method : _RungeKuttaStep
+        Stepper to use
+    r_tol : float
+        The relative error tolerance
+    a_tol : float
+        The absolute error tolerance
+    max_step : float
+        Maximum allowable step size to take
+    error_estimate : Callable
+        Function to use as the error estimate
+
+    Returns
+    -------
+    ODEResult
+        The solution to the ODE
+
+    Raises
+    ------
+    RuntimeError
+        Raised if no step size satisfies the error criteria
+    """
+    fac_max = 1.5
+    fac_min = 0.5
+    safety_fac = 0.9
+
     t = [t_span[0]]
     y = [np.asarray(y0)]
 
@@ -331,13 +559,10 @@ def _solve_to_adaptive(
             y1, local_err = error_estimate(f, t[-1], y[-1], h, method)
 
             scale = _scale(r_tol, a_tol, y1, y[-1])
-
             err = _error_norm(local_err / scale)
 
             # adjust step size
-            fac_max = 1.5
-            fac_min = 0.5
-            safety_fac = 0.9
+            # eq 4.13 Hairer
             h_new = h * min(
                 fac_max,
                 max(fac_min, safety_fac * (1 / err) ** (1 / (method.order + 1))),
@@ -373,7 +598,7 @@ _fixed_step_methods = {
     "midpoint": _ExplicitMidpointStep,
     "heun": _HeunsStep,
     "ralston": _RalstonStep,
-    "kutta2": _Kutta3Step,
+    "kutta3": _Kutta3Step,
     "heun3": _Heun3Step,
     "wray3": _Wray3Step,
     "ralston3": _Ralston3Step,
@@ -393,27 +618,68 @@ _embedded_methods = {
 _all_methods = {**_fixed_step_methods, **_embedded_methods}
 
 
-def _estimate_initial_step_size(f, y0, t0, method, r_tol, a_tol, max_step):
+def _estimate_initial_step_size(
+    f: Callable,
+    y0: np.ndarray,
+    t0: float,
+    method: _RungeKuttaStep,
+    r_tol: float,
+    a_tol: float,
+    max_step: float,
+) -> float:
+    """Private function to estimate a suitable initial step size. Algorithm described
+    on page 169 of Hairer Solving Ordinary Differential Equations 1.
+
+    Parameters
+    ----------
+    f : Callable
+        RHS function of the ODE
+    y0 : np.ndarray
+        Initial conditions
+    t0 : float
+        Initial Time
+    method : _RungeKuttaStep
+        Integrator being used
+    r_tol : float
+        Relative error tolerance
+    a_tol : float
+        Absolute error tolerance
+    max_step : float
+        Maximum allowable stepsize
+
+    Returns
+    -------
+    float
+        Estimate for the initial step size to use
+    """
+    # step a
     scale = _scale(r_tol, a_tol, y0)
     d0 = _error_norm(y0 / scale)
     f0 = f(t0, y0)
     scale = _scale(r_tol, a_tol, f0)
     d1 = _error_norm(f0 / scale)
 
+    # step b
     if d0 < 1e-5 or d1 < 1e-5 or math.isnan(d0) or math.isnan(d1):
         h0 = 1e-6
     else:
         h0 = 0.01 * (d0 / d1)
 
+    # step c
     y1 = _EulerStep()(f, t0, y0, h0).y
+
+    # step d
     diff = f(t0 + h0, y1) - f(t0, y0)
     scale = _scale(r_tol, a_tol, diff)
     d2 = _error_norm(diff / scale)
 
+    # step e
     if max(d1, d2) <= 1e-15 or math.isnan(d1) or math.isnan(d2):
         h1 = max(1e-6, h0 * 1e-3)
     else:
         h1 = (0.01 / max(d1, d2)) ** (1 / (method.order + 1))
+
+    # step d
     h = max(100 * h0, h1)
     return h if h < max_step else max_step
 
@@ -429,6 +695,76 @@ def solve_ivp(
     a_tol: float = 0.0,
     max_step: float = np.inf,
 ) -> ODEResult:
+    """Solves the IVP from a system of ODEs
+
+    Has three primary modes of execution, see examples for further details.
+    1. Solve the ODE using a fixed timestep. This is used if `h` is proved and `r_tol`
+    and `a_tol` are 0.
+    2. Solve the ODE using a adaptive timestep using Richardson Extrapolation as the
+    error estimate. This is used if `r_tol` or `a_tol` are set and `method` does not
+    have an embedded error estimate.
+    3. Solve the ODE using a adaptive timestep using an embedded error estimate. This
+    is used if `r_tol` or `a_tol` are set and `method` does have an embedded error
+    estimate.
+
+    `h` is optional if operating as in modes (2) or (3) as a suitable initial step
+    size will be determined algorithmically.
+
+    Parameters
+    ----------
+    f : Callable
+        RHS function of the ODE. Must have signature ``f(t,y) -> array_like``.
+    y0 : npt.ArrayLike
+        Initial conditions
+    t_span : tuple[float, float]
+        Interval of integration
+    method : str
+        The integrator to use.
+
+        Methods with embedded error estimates:
+        - ``"bogacki_shampine"``: Second order method with third order error estimator
+        - ``"rkf45"``: The classic Runge-Kutta-Fehlberg forth order method with fifth
+        order error estimator.
+        - ``"ck45"``: Fourth order Cash-Karp with fifth order error estimator.
+        - ``"dopri45"``: Forth order Dormand-Prince with fifth order embedded error
+        estimate
+
+        Methods without embedded error estimate:
+        -``"euler"``: Forward Euler (first order)
+        -``"midpoint"``: Explicit midpoint (second order)
+        -``"heun"``: Heun's method (second order). Also known as the explicit trapezoid
+        rule or modified Euler's method.
+        -``"ralston"``: Ralston's method (second order)
+        -``"kutta3"``: Kutta's third-order method
+        -``"heun3"``: Heun's third-order method
+        -``"wray3"``: Van der Houwen's/Wray third-order method
+        -``"ralston3"``: Ralston's third-order method
+        -``"ssprk3"``: Third-order Strong Stability Preserving Runge-Kutta
+        -``"rk4"``: Classic fourth order Runge-Kutta
+        -``"rk38"``: Fourth order Runge-Kutta 3/8-rule
+        -``"ralston4"``: Ralston's fourth-order method
+    h : Optional[float], optional
+        Step size. If `r_tol` and `a_tol` are left as default then this is used as a
+        fixed step size for the integration scheme. Otherwise this is the initial step
+        size used in the adaptive integration scheme.
+    r_tol : float, optional
+        Relative error tolerance, by default 0.0. Adaptive solver keeps the local error
+        bellow this tolerance.
+    a_tol : float, optional
+        Absolute error tolerance, by default 0.0. Adaptive solver keeps the local error
+        bellow this tolerance.
+    max_step : float, optional
+        Maximum allowable step size, by default np.inf
+
+    Returns
+    -------
+    ODEResult
+        Results object with the following attributes:
+            - ``y``: np.ndarray
+                Solution at t.
+            - ``t``: np.ndarray
+                Time correspond to the solution.
+    """
     if not callable(f):
         raise ValueError("'f' must be callable")
     else:
