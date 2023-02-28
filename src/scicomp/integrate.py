@@ -276,8 +276,7 @@ class _Ralston4Step(_RungeKuttaStep):
 
 
 class _BogackiShampineStep(_RungeKuttaStep):
-    """Butcher tableau for the second order Bogacki–Shampine method with a third order
-    embedded error estimate.
+    """Butcher tableau for the Bogacki-Shampine method
     https://en.wikipedia.org/wiki/Bogacki%E2%80%93Shampine_method
     """
 
@@ -291,8 +290,7 @@ class _BogackiShampineStep(_RungeKuttaStep):
 
 
 class _RKF45Step(_RungeKuttaStep):
-    """Butcher Tableau for the fourth order Runge-Kutta-Fehlberg method with fifth order
-    error estimate.
+    """Butcher Tableau for the Runge-Kutta-Fehlberg method
     https://en.wikipedia.org/wiki/Runge%E2%80%93Kutta%E2%80%93Fehlberg_method
     """
 
@@ -313,8 +311,7 @@ class _RKF45Step(_RungeKuttaStep):
 
 
 class _CashKarpStep(_RungeKuttaStep):
-    """Butcher Tableau for the fourth order Cash–Karp method with fifth order embedded
-    error estimate.
+    """Butcher Tableau for the Cash-Karp method
     https://en.wikipedia.org/wiki/Cash%E2%80%93Karp_method
     """
 
@@ -337,8 +334,7 @@ class _CashKarpStep(_RungeKuttaStep):
 
 
 class _DomandPrinceStep(_RungeKuttaStep):
-    """Butcher Tableau for the fourth order Dormand–Prince method with fifth order
-    embedded error estimator.
+    """Butcher Tableau for the Dormand-Prince method
     https://en.wikipedia.org/wiki/Dormand%E2%80%93Prince_method
     """
 
@@ -722,12 +718,10 @@ def solve_ivp(
         The integrator to use.
 
         Methods with embedded error estimates:
-        - ``"bogacki_shampine"``: Second order method with third order error estimator
-        - ``"rkf45"``: The classic Runge-Kutta-Fehlberg forth order method with fifth
-        order error estimator.
-        - ``"ck45"``: Fourth order Cash-Karp with fifth order error estimator.
-        - ``"dopri45"``: Forth order Dormand-Prince with fifth order embedded error
-        estimate
+        - ``"bogacki_shampine"``
+        - ``"rkf45"``: The classic Runge-Kutta-Fehlberg method
+        - ``"ck45"``: Cash-Karp
+        - ``"dopri45"``: Forth order Dormand-Prince
 
         Methods without embedded error estimate:
         -``"euler"``: Forward Euler (first order)
