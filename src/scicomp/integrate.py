@@ -709,7 +709,9 @@ def solve_ivp(
     Parameters
     ----------
     f : Callable
-        RHS function of the ODE. Must have signature ``f(t,y) -> array_like``.
+        RHS function of the ODE. Must have signature ``f(t,y) -> array_like``. Any
+        parameters to the ODE should be handled by wrapping the ODE in a function or
+        anonymous function
     y0 : npt.ArrayLike
         Initial conditions
     t_span : tuple[float, float]
@@ -758,7 +760,70 @@ def solve_ivp(
                 Solution at t.
             - ``t``: np.ndarray
                 Time correspond to the solution.
-    """
+
+    Examples
+    --------
+
+    In this example we will demonstrate solving an ODE with the different solver modes
+
+    >>> from scicomp.integrate import shm_ode
+    >>> from scicomp.integrate import solve_ivp
+    >>> def rhs(t,y):
+    ...     return shm_ode(t, y, 1)
+    >>> t_span = (0, 10)
+    >>> y0 = [0.5, 0.5]
+
+    Solving using a fixed timestep.
+
+    >>> solve_ivp(rhs, y0=y0, t_span=t_span, method="rk4", h=1e-2)
+    ODEResult(y=array([[ 0.5       ,  0.50497492,  0.50989934, ..., -0.69003652,
+            -0.69154632, -0.69154632],
+           [ 0.5       ,  0.49497508,  0.48990067, ..., -0.15443318,
+            -0.14752521, -0.14752521]]), t=array([ 0.  ,  0.01,  0.02, ...,  9.99, 10.  , 10.  ]))
+
+    Solve using an adaptive timestep with Richardson Extrapolation as the error estimate
+
+    >>> solve_ivp(rhs, y0=y0, t_span=t_span, method="rk4", h=1e-2, r_tol=1e-3)
+    ODEResult(y=array([[ 0.5       ,  0.50497492,  0.51234246,  0.52317711,  0.53893083,
+             0.56140509,  0.59240227,  0.63244547,  0.67700782,  0.70663495,
+             0.66474459,  0.42583101, -0.1532335 , -0.66590121, -0.51947298,
+             0.13562252,  0.66956765,  0.50947758, -0.15183137, -0.67320671,
+            -0.68945685],
+           [ 0.5       ,  0.49497508,  0.48734506,  0.47569497,  0.4577702 ,
+             0.429912  ,  0.38608231,  0.31624789,  0.20410881,  0.02582602,
+            -0.24106818, -0.56449915, -0.69023335, -0.23717996,  0.4790413 ,
+             0.69332804,  0.22469763, -0.48876838, -0.6893248 , -0.21150438,
+            -0.15030182]]), t=array([ 0.        ,  0.01      ,  0.025     ,  0.0475    ,  0.08125   ,
+             0.131875  ,  0.2078125 ,  0.32171875,  0.49257813,  0.74886719,
+             1.13330078,  1.70995117,  2.57492676,  3.58559481,  4.67340325,
+             5.69296438,  6.74742511,  7.83657281,  8.86004401,  9.91023249,
+             10.        ]))
+
+    Solve using an adaptive timestep with Richardson Extrapolation as the error estimate
+    with no initial timestep provided
+
+    >>> solve_ivp(rhs, y0=y0, t_span=t_span, method="rk4", r_tol=1e-3)
+    ODEResult(y=array([[ 0.5       ,  0.69081285,  0.21648852, -0.49580923, -0.68732638,
+            -0.20301247,  0.50573613,  0.68248609,  0.18936009, -0.51541622,
+            -0.68893827],
+           [ 0.5       , -0.15022447, -0.67279137, -0.50332778,  0.1627995 ,
+             0.67633675,  0.49246833, -0.17960291, -0.67964657, -0.4814253 ,
+            -0.15094109]]), t=array([ 0.        ,  1.        ,  2.04594544,  3.1358502 ,  4.16188388,
+             5.20909215,  6.30011048,  7.33009085,  8.37241704,  9.46434924,
+            10.        ]))
+
+    Solve using adaptive timestep using an embedded error estimate and no initial timestep
+
+    >>> solve_ivp(rhs, y0=y0, t_span=t_span, method="rkf45", r_tol=1e-3)
+        ODEResult(y=array([[ 0.5       ,  0.70345933,  0.39396531, -0.18910256, -0.63384444,
+                -0.65128745, -0.25118104,  0.34182193,  0.6847462 ,  0.58109135,
+                 0.09805386, -0.47581897, -0.69332318],
+               [ 0.5       , -0.07410707, -0.58775393, -0.68205051, -0.31534837,
+                 0.27807466,  0.66227544,  0.62061071,  0.18255243, -0.40600934,
+                -0.7022262 , -0.52597345, -0.14967229]]), t=array([ 0.        ,  0.89064755,  1.76623584,  2.62743512,  3.46630238,
+                 4.3317307 ,  5.13663241,  6.00282512,  6.80978582,  7.68042683,
+                 8.50280141,  9.37716803, 10.        ]))
+    """  # noqa: E501
     if not callable(f):
         raise ValueError("'f' must be callable")
     else:
