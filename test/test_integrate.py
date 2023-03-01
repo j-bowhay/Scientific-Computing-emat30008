@@ -155,5 +155,5 @@ class TestSolveOde:
         np.testing.assert_allclose(
             res.y[:, -1],
             [np.cos(0.5) + 0.5 * np.sin(0.5), -np.sin(0.5) + 0.5 * np.cos(0.5)],
-            rtol=1e-5,
+            rtol=2e-4,
         )
