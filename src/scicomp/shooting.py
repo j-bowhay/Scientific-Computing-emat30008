@@ -53,7 +53,7 @@ def find_limit_cycle(
     y0 = np.asarray(y0)
     ivp_solver_kwargs = dict() if ivp_solver_kwargs is None else ivp_solver_kwargs
     root_finder_kwargs = dict() if root_finder_kwargs is None else root_finder_kwargs
-    
+
     def G(x):
         period_condition = (
             x[:-1]
