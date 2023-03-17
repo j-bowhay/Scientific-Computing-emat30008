@@ -3,13 +3,15 @@ import scipy
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
+import scicomp
+
 a = 0
 b = 1
 t_span = (0,1)
 alpha = 0
 beta = 0
 D = 1
-mu = 2
+mu = 4
 
 N = 20
 
@@ -24,10 +26,11 @@ b_DD = np.zeros((N - 1, 1)).squeeze()
 b_DD[0] = alpha
 b_DD[-1] = beta
 
-def rhs(t,u):
-    return (D/(dx)**2) * (A@u + b_DD) + np.exp(mu*u)
+def rhs(t,y):
+    return (D/(dx)**2) * (A@y + b_DD) + np.exp(mu*y)
 
-sol = scipy.integrate.solve_ivp(rhs, t_span, np.zeros_like(b_DD), r_tol=1e-6)
+sol = scipy.integrate.solve_ivp(rhs, t_span, np.zeros_like(b_DD), r_tol=1e-12, a_tol=1e-12)
+#sol = scicomp.integrate.solve_ivp(rhs, t_span=t_span, y0=np.zeros_like(b_DD), r_tol=1e-9, method="dopri45")
 U = sol.y.T
 
 fig, ax = plt.subplots()
