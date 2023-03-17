@@ -27,13 +27,8 @@ b_DD[-1] = beta
 def rhs(t,u):
     return (D/(dx)**2) * (A@u + b_DD)
 
-dt = (C * (dx)**2) / D
-nt = int(np.ceil(t_span[-1] / dt))
-
-U = np.zeros((nt, N - 1))
-
-for i in range(1, nt):
-    U[i, :] = U[i-1,:] + dt * rhs(np.nan, U[i-1,:])
+sol = scipy.integrate.solve_ivp(rhs, t_span, np.zeros_like(b_DD))
+U = sol.y.T
 
 fig, ax = plt.subplots()
 ax.set_ylim([0,1])
@@ -45,6 +40,6 @@ def update(frame):
 
 ani = FuncAnimation(
     fig, update,
-    frames=range(nt))
+    frames=range(U.shape[0]))
 
 plt.show()
