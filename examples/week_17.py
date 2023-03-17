@@ -11,7 +11,7 @@ def eq(x, c):
 
 c = [-2]
 x = [root(lambda x: eq(x, c), [1.5], tol=1e-6).x]
-h = 0.1
+h = 0.01
 
 for _ in range(int(4 / h)):
     c_new = c[-1] + h
