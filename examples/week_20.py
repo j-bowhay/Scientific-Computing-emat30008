@@ -7,11 +7,11 @@ a = 0
 b = 1
 t_span = (0,1)
 alpha = 0
-beta = 1
+beta = 0
 D = 1
+mu = 2
 
-N = 10
-C = 0.49
+N = 20
 
 x = np.linspace(a, b, N + 1)
 x_inner = x[1:-1]
@@ -25,13 +25,13 @@ b_DD[0] = alpha
 b_DD[-1] = beta
 
 def rhs(t,u):
-    return (D/(dx)**2) * (A@u + b_DD)
+    return (D/(dx)**2) * (A@u + b_DD) + np.exp(mu*u)
 
-sol = scipy.integrate.solve_ivp(rhs, t_span, np.zeros_like(b_DD))
+sol = scipy.integrate.solve_ivp(rhs, t_span, np.zeros_like(b_DD), r_tol=1e-6)
 U = sol.y.T
 
 fig, ax = plt.subplots()
-ax.set_ylim([0,1])
+ax.set_ylim([0,np.amax(U)])
 line1, = ax.plot(x_inner, U[0,:])
 
 def update(frame):
@@ -40,6 +40,7 @@ def update(frame):
 
 ani = FuncAnimation(
     fig, update,
-    frames=range(U.shape[0]))
+    frames=range(U.shape[0]),
+    interval=1)
 
 plt.show()

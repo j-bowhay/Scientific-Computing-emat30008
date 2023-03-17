@@ -37,8 +37,8 @@ def solve_bratu(N, mu):
 
 
 if __name__ == "__main__":
-    x, u = solve_poisson_linear(a=0, b=1, N=10, alpha=0, beta=2, q=lambda x: 1)
-    plt.plot(x, u,)
-    plt.show()
-    plt.plot(solve_bratu(20, mu=0.5))
+    # x, u = solve_poisson_linear(a=0, b=1, N=10, alpha=0, beta=2, q=lambda x: 1)
+    # plt.plot(x, u,)
+    # plt.show()
+    plt.plot(solve_bratu(20, mu=4))
     plt.show()
