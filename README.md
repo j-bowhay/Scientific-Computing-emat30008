@@ -15,3 +15,17 @@ git clone git@github.com:j-bowhay/Scientific-Computing-emat30008.git
 cd Scientific-Computing-emat30008
 pip install ".[dev]"
 ```
+
+## Submodule Overview
+
+### `integrate`
+
+Solving initial value problems.
+
+### `odes`
+
+Provides right hand side functions for a collection of common ODEs.
+
+### `shooting`
+
+Numerical shooting to find limit cycles in ODEs. Also provides a number of built in phase conditions and functionality for defining arbitrary phase conditions.
