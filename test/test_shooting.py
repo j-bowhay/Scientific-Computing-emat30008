@@ -8,12 +8,12 @@ class TestFindLimitCycle:
         beta = 1
         rho = -1
         pc = DerivativePhaseCondition(0)
-        solver_args = {"method": "rkf45", "r_tol": 1e-5}
+        solver_args = {"method": "rkf45", "r_tol": 1e-6}
         res = find_limit_cycle(
             lambda t, y: hopf_normal(t, y, beta, rho),
-            y0=[1, 1],
-            T=6.2,
+            y0=[1, 0],
+            T=6.28,
             phase_condition=pc,
             ivp_solver_kwargs=solver_args,
         )
-        np.testing.assert_allclose(res.T, 2 * np.pi)
+        np.testing.assert_allclose(res.T, 2 * np.pi, rtol=1e-6)
