@@ -1,14 +1,19 @@
 import numpy as np
 from scicomp.odes import hopf_normal
-from scicomp.shooting import find_limit_cycle
+from scicomp.shooting import find_limit_cycle, DerivativePhaseCondition
 
 
 class TestFindLimitCycle:
     def test_find_hopf_period(self):
         beta = 1
         rho = -1
-        np.testing.assert_allclose(
-            find_limit_cycle(lambda t, y: hopf_normal(t, y, beta, rho), [1, 1, 6])[-1],
-            2 * np.pi,
-            rtol=1e-4,
+        pc = DerivativePhaseCondition(0)
+        solver_args = {"method": "rkf45", "r_tol": 1e-5}
+        res = find_limit_cycle(
+            lambda t, y: hopf_normal(t, y, beta, rho),
+            y0=[1, 1],
+            T=6.2,
+            phase_condition=pc,
+            ivp_solver_kwargs=solver_args,
         )
+        np.testing.assert_allclose(res.T, 2 * np.pi)
