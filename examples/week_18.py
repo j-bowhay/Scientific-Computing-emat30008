@@ -1,6 +1,6 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy
-import matplotlib.pyplot as plt
 
 
 def solve_poisson_linear(a, b, N, alpha, beta, q):

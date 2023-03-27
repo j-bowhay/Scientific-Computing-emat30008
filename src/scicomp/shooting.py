@@ -1,23 +1,58 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Callable, Optional
 
 import numpy as np
 import numpy.typing as npt
-import scipy
 from scipy.optimize import root
 
 from scicomp.integrate import solve_ivp
 
 
+class LimitCycleNotFound(Exception):
+    """Custom error for when a limit cycle is not found."""
+
+    ...
+
+
 class PhaseCondition(ABC):
+    """Base class for defining phase conditions for limit cycle detection using
+    numerical shooting.
+    """
+
     @abstractmethod
     def __call__(self, f: Callable, y0: np.ndarray) -> float:
+        """Implements the phase condition.
+
+        Parameters
+        ----------
+        f : Callable
+            RHS function of the ODE
+        y0 : np.ndarray
+            Current initial conditions
+
+        Returns
+        -------
+        float
+            Phase condition value
+        """
         ...
 
 
 class ICPhaseCondition(PhaseCondition):
     def __init__(self, value: float, component: int) -> None:
+        """Phase condition for fixing one of the values of initial conditions eg.
+        ``x(0)=0.4``.
+
+        Parameters
+        ----------
+        value : float
+            Value of the initial condition
+        component : int
+            Which variable to fix
+        """
         self.value = value
         self.component = component
 
@@ -27,6 +62,13 @@ class ICPhaseCondition(PhaseCondition):
 
 class DerivativePhaseCondition(PhaseCondition):
     def __init__(self, component: int) -> None:
+        """Implements a derivate phase condition eg. `x'(0) = 0`.
+
+        Parameters
+        ----------
+        component : int
+            Which component of the derivate to set to zero.
+        """
         self.component = component
 
     def __call__(self, f: Callable, y0: np.ndarray) -> float:
@@ -35,6 +77,15 @@ class DerivativePhaseCondition(PhaseCondition):
 
 @dataclass(frozen=True, slots=True)
 class LimitCycleResult:
+    """Result object to store the detected limit cycle.
+
+    Has the following attributes:
+        y0 : ndarray
+            The initial conditions to start on the limit cycle
+        T : float
+            The time period of the limit cycle
+    """
+
     y0: np.ndarray
     T: float
 
@@ -50,6 +101,58 @@ def find_limit_cycle(
     ivp_solver_kwargs: Optional[dict] = None,
     root_finder_kwargs: Optional[dict] = None,
 ) -> LimitCycleResult:
+    """Finds a limit cycle in the given ODE using numerical shooting.
+
+    Parameters
+    ----------
+    f : Callable
+        The RHS function of the ODE
+    y0 : npt.ArrayLike
+        Initial guess for initial conditions that lead to a limit cycle
+    T : float
+        Initial guess for the period of the limit cycle
+    phase_condition : PhaseCondition
+        `PhaseCondition` object which describes the phase condition to be applied
+    ivp_solver : Callable, optional
+        The IVP solver to use, by default `scicomp.integrate.solve_ivp`
+    root_finder : Callable, optional
+        The root finder to use, by default `scipy.optimize.root`
+    ivp_solver_kwargs : Optional[dict], optional
+        Keyword arguments to parse to the IVP solver, by default None
+    root_finder_kwargs : Optional[dict], optional
+        Keyword arguments to parse to the root finder, by default None
+
+    Returns
+    -------
+    LimitCycleResult
+        Results object with the following attributes:
+            y0 : ndarray
+                The initial conditions to start on the limit cycle
+            T : float
+                The time period of the limit cycle
+
+    Raises
+    ------
+    LimitCycleNotFound
+        Raised if a limit cycle cannot be found. This may be as a result of a bad
+        initial guess or if the ODE does not have a limit cycle.
+
+    Examples
+    --------
+
+    In this example we will find a limit cycle in the predator prey equation.
+
+    >>> from scicomp.odes import predator_prey
+    >>> from scicomp.shooting import find_limit_cycle, DerivativePhaseCondition
+    >>> a = 1
+    >>> d = 0.1
+    >>> b = 0.1
+    >>> pc = DerivativePhaseCondition(0)
+    >>> solver_args = {"method": "rkf45", "r_tol": 1e-5}
+    >>> find_limit_cycle(lambda t, y: predator_prey(t, y, a, b, d), y0=[0.8, 0.2],
+    T=30, phase_condition=pc, ivp_solver_kwargs=solver_args)
+    LimitCycleResult(y0=array([0.81897015, 0.16636103]), T=34.066559310372)
+    """
     y0 = np.asarray(y0)
     ivp_solver_kwargs = dict() if ivp_solver_kwargs is None else ivp_solver_kwargs
     root_finder_kwargs = dict() if root_finder_kwargs is None else root_finder_kwargs
@@ -63,17 +166,5 @@ def find_limit_cycle(
 
     sol = root_finder(G, [*y0, T], **root_finder_kwargs)
     if not sol.success:
-        raise RuntimeError("No limit cycle found")
+        raise LimitCycleNotFound("No limit cycle found; potential bad initial guess.")
     return LimitCycleResult(sol.x[:-1], sol.x[-1])
-
-
-def _find_limit_cycle(ode: Callable, x0: np.ndarray) -> np.ndarray:
-    def condition(x):
-        condition_1 = (
-            x[:2] - scipy.integrate.solve_ivp(ode, (0, x[2]), x[:2], rtol=1e-5).y[:, -1]
-        )
-        # make this generic
-        condition_2 = ode(np.nan, x[:2])[0]
-        return [*condition_1, condition_2]
-
-    return scipy.optimize.root(condition, x0).x

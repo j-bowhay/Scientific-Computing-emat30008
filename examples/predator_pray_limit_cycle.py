@@ -1,8 +1,7 @@
 import matplotlib.pyplot as plt
-import scipy
-from scicomp.odes import predator_prey
-from scicomp.shooting import find_limit_cycle, DerivativePhaseCondition
 import scicomp
+from scicomp.odes import predator_prey
+from scicomp.shooting import DerivativePhaseCondition, find_limit_cycle
 
 a = 1
 d = 0.1

@@ -1,9 +1,7 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy
-import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
-
-import scicomp
 
 a = 0
 b = 1

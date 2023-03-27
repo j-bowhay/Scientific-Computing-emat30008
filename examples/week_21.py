@@ -1,7 +1,7 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 from matplotlib.animation import FuncAnimation
-import matplotlib.pyplot as plt
 
 alpha = 0
 beta = 0
