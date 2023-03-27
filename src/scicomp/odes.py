@@ -63,7 +63,7 @@ def shm_ode(t: float, y: np.ndarray, omega: float) -> npt.ArrayLike:
 
 
 def hopf_normal(t: float, y: np.ndarray, beta: float, rho: float) -> npt.ArrayLike:
-    """RHS function for the hopf normal form.
+    r"""RHS function for the hopf normal form.
     
     ..math::
 
@@ -95,10 +95,45 @@ def hopf_normal(t: float, y: np.ndarray, beta: float, rho: float) -> npt.ArrayLi
     ]
 
 
+def hopf_3D(t: float, y: np.ndarray, beta: float, rho: float) -> npt.ArrayLike:
+    r"""RHS function for a 3D hopf bifurcation.
+    
+    ..math::
+
+        \newcommand{\diff}[2]{\frac{\mathrm{d}#1}{\mathrm{d}#2}}
+        \begin{align}
+        \diff{u_1}{t} &= \beta u_1 - u_2 + \sigma u_1\left(u_1^2 + u_2^2\right)\\
+        \diff{u_2}{t} &= u_1 + \beta u_2 + \sigma u_2\left(u_1^2 + u_2^2\right)\\
+        \diff{u_3}{t} &= -u_3
+        \end{align}
+
+    Parameters
+    ----------
+    t : float
+        Time
+    y : np.ndarray
+        Current state
+    beta : float
+        magnitude parameter
+    rho : float
+        criticality parameter
+
+    Returns
+    -------
+    npt.ArrayLike
+        RHS of the ODE
+    """
+    return [
+        beta * y[0] - y[1] + rho * y[0] * (y[0] ** 2 + y[1] ** 2),
+        y[0] + beta * y[1] + rho * y[1] * (y[0] ** 2 + y[1] ** 2),
+        -y[2],
+    ]
+
+
 def predator_prey(
     t: float, y: np.ndarray, a: float, b: float, d: float
 ) -> npt.ArrayLike:
-    """RHS function for the predator prey equation
+    r"""RHS function for the predator prey equation
     
     .. math::
     
