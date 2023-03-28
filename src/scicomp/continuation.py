@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import inspect
 from dataclasses import dataclass
 from typing import Callable, Optional
-import inspect
 
 import numpy as np
 import numpy.typing as npt
@@ -96,10 +96,27 @@ def continuation(
             augmented_param.append(np.array([param, *sol.x]))
         else:
             break
-    
+
     if method == "ps-arc":
-        for _ in max_steps:
-            ...
+        for _ in range(max_steps):
+            secant = augmented_param[-1] - augmented_param[-2]
+            predicted = augmented_param[-1] + secant
+
+            sol = root(
+                lambda x: [
+                    *discretisation(
+                        equation(x[1:], **{variable_kwarg: x[0]}, **fixed_kwargs)
+                    ),
+                    np.dot(secant, x - predicted),
+                ],
+                x0=predicted,
+                **root_finder_kwargs,
+            )
+
+            if sol.success:
+                augmented_param.append(sol.x)
+            else:
+                break
 
     augmented_param = np.asarray(augmented_param)
     return ContinuationResult(augmented_param[:, 1:], augmented_param[:, 0])
