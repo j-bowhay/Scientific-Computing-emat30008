@@ -153,11 +153,16 @@ def find_limit_cycle(
     T=30, phase_condition=pc, ivp_solver_kwargs=solver_args)
     LimitCycleResult(y0=array([0.81897015, 0.16636103]), T=34.066559310372)
     """
+    if T <= 0:
+        raise ValueError("Initial guess of period 'T' must be positive")
+
     y0 = np.asarray(y0)
     ivp_solver_kwargs = dict() if ivp_solver_kwargs is None else ivp_solver_kwargs
     root_finder_kwargs = dict() if root_finder_kwargs is None else root_finder_kwargs
 
-    def G(x):
+    def G(x: npt.ArrayLike) -> npt.ArrayLike:
+        """Defines shooting function to fine the zeros of"""
+        # y(0) - y(T)
         period_condition = (
             x[:-1]
             - ivp_solver(f, t_span=(0, x[-1]), y0=x[:-1], **ivp_solver_kwargs).y[:, -1]
@@ -165,6 +170,8 @@ def find_limit_cycle(
         return [*period_condition, phase_condition(f, x[:-1])]
 
     sol = root_finder(G, [*y0, T], **root_finder_kwargs)
+
     if not sol.success:
         raise LimitCycleNotFound("No limit cycle found; potential bad initial guess.")
+
     return LimitCycleResult(sol.x[:-1], sol.x[-1])
