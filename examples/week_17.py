@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import root
 
+from scicomp.continuation import continuation
+
 
 def eq(x, c):
     return x**3 - x + c
@@ -22,10 +24,21 @@ for _ in range(int(4 / h)):
     else:
         break
 
-# plt.plot(c, x)
-# plt.xlabel("c")
-# plt.ylabel("x")
-# plt.show()
+sol = continuation(
+    eq,
+    variable_kwarg="c",
+    initial_value=-2,
+    step_size=0.01,
+    max_steps=400,
+    y0=[1.5],
+    root_finder_kwargs={"tol": 1e-6},
+    method="np",
+)
+
+plt.plot(sol.parameter_values, sol.state_values)
+plt.xlabel("c")
+plt.ylabel("x")
+plt.show()
 
 # pseudo-arclength
 

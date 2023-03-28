@@ -9,6 +9,10 @@ import numpy.typing as npt
 from scipy.optimize import root
 
 
+class ContinuationError(Exception):
+    ...
+
+
 @dataclass
 class ContinuationResult:
     state_values: np.ndarray
@@ -22,14 +26,17 @@ def continuation(
     equation: Callable,
     *,
     variable_kwarg: str,
+    initial_value: float,
     y0: npt.ArrayLike,
     step_size: float,
     max_steps: int,
     fixed_kwargs: Optional[dict] = None,
     discretisation: Callable = lambda x: x,
     method: str = "ps-arc",
+    root_finder_kwargs: Optional[dict] = None,
 ) -> ContinuationResult:
     fixed_kwargs = {} if fixed_kwargs is None else fixed_kwargs
+    root_finder_kwargs = {} if root_finder_kwargs is None else root_finder_kwargs
 
     if not callable(equation):
         raise ValueError("'equation' must be callable")
@@ -40,7 +47,7 @@ def continuation(
             raise ValueError(
                 "'variable_kwarg' is not a valid parameter to vary in 'equation'"
             )
-        elif set(fixed_kwargs.keys()) <= equation_sig:
+        elif len(fixed_kwargs) > 0 and set(fixed_kwargs.keys()) <= equation_sig:
             raise ValueError("'fixed_kwargs' are not valid inputs to 'equation'")
 
     if step_size <= 0:
@@ -56,3 +63,43 @@ def continuation(
         raise ValueError(
             f"{method} is not a valid method. Valid methods are: {*_valid_methods,}"
         )
+
+    initial_sol = root(
+        lambda x: discretisation(
+            equation(x, **{variable_kwarg: initial_value}, **fixed_kwargs)
+        ),
+        x0=[y0],
+        **root_finder_kwargs,
+    )
+    if initial_sol.success:
+        augmented_param = [np.array([initial_value, *initial_sol.x])]
+    else:
+        raise ContinuationError("Bad initial guess; failed to converge")
+
+    if method == "np":
+        steps = max_steps
+    elif method == "ps-arc":
+        # need to do an iteration of natural parameter continuation to find initial secant
+        steps = 1
+
+    # natural parameter continuation
+    for _ in range(steps):
+        param = augmented_param[-1][0] + step_size
+        sol = root(
+            lambda x: discretisation(
+                equation(x, **{variable_kwarg: param}, **fixed_kwargs)
+            ),
+            x0=[augmented_param[-1][1:]],
+            **root_finder_kwargs,
+        )
+        if sol.success:
+            augmented_param.append(np.array([param, *sol.x]))
+        else:
+            break
+    
+    if method == "ps-arc":
+        for _ in max_steps:
+            ...
+
+    augmented_param = np.asarray(augmented_param)
+    return ContinuationResult(augmented_param[:, 1:], augmented_param[:, 0])
