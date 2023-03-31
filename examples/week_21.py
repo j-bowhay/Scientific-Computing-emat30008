@@ -3,6 +3,8 @@ import numpy as np
 import scipy
 from matplotlib.animation import FuncAnimation
 
+from scicomp.finite_diff import get_central_diff_matrix
+
 alpha = 0
 beta = 0
 L = 1
@@ -16,9 +18,7 @@ x = np.linspace(0, L, N + 1)
 u = np.empty((Nt, N - 1))
 u[0, :] = np.sin(np.pi * x[1:-1])
 
-k = [np.ones(N - 2), -2 * np.ones(N - 1), np.ones(N - 2)]
-offset = [-1, 0, 1]
-A_DD = scipy.sparse.diags(k, offset).toarray()
+A_DD = get_central_diff_matrix(N-1, derivative=2)
 b_DD = np.zeros((N - 1, 1)).squeeze()
 b_DD[0] = alpha
 b_DD[-1] = beta

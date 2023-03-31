@@ -3,6 +3,8 @@ import numpy as np
 import scipy
 from matplotlib.animation import FuncAnimation
 
+from scicomp.finite_diff import get_central_diff_matrix
+
 a = 0
 b = 1
 t_span = (0, 1)
@@ -17,9 +19,7 @@ x = np.linspace(a, b, N + 1)
 x_inner = x[1:-1]
 dx = (b - a) / N
 
-k = [np.ones(N - 2), -2 * np.ones(N - 1), np.ones(N - 2)]
-offset = [-1, 0, 1]
-A = scipy.sparse.diags(k, offset).toarray()
+A = get_central_diff_matrix(N-1, derivative=2)
 b_DD = np.zeros((N - 1, 1)).squeeze()
 b_DD[0] = alpha
 b_DD[-1] = beta
@@ -30,7 +30,7 @@ def rhs(t, y):
 
 
 sol = scipy.integrate.solve_ivp(
-    rhs, t_span, np.zeros_like(b_DD), r_tol=1e-12, a_tol=1e-12
+    rhs, t_span, np.zeros_like(b_DD), rtol=1e-12, atol=1e-12
 )
 # sol = scicomp.integrate.solve_ivp(rhs, t_span=t_span, y0=np.zeros_like(b_DD), r_tol=1e-9, method="dopri45")
 U = sol.y.T
