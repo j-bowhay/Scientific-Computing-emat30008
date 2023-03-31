@@ -24,6 +24,9 @@ def get_central_diff_matrix(
     np.ndarray | scipy.sparse.dia_matrix
         The central difference matrix
     """
+    if n < points:
+        raise ValueError(f"Matrix must be at least {points}*{points}")
+
     weights = _central_diff_weights(points, derivative)
 
     k = int(0.5 * (points - 1))
