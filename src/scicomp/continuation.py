@@ -47,7 +47,7 @@ def continuation(
             raise ValueError(
                 "'variable_kwarg' is not a valid parameter to vary in 'equation'"
             )
-        elif len(fixed_kwargs) > 0 and set(fixed_kwargs.keys()) <= equation_sig:
+        elif len(fixed_kwargs) > 0 and not set(fixed_kwargs.keys()) <= equation_sig:
             raise ValueError("'fixed_kwargs' are not valid inputs to 'equation'")
 
     if step_size <= 0:

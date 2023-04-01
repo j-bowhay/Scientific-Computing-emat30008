@@ -1,5 +1,6 @@
 def solve_reaction_diffusion_method_lines():
     ...
 
+
 def solve_reaction_diffusion_crank_nicolson():
     ...

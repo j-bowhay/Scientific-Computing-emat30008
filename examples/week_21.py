@@ -18,7 +18,7 @@ x = np.linspace(0, L, N + 1)
 u = np.empty((Nt, N - 1))
 u[0, :] = np.sin(np.pi * x[1:-1])
 
-A_DD = get_central_diff_matrix(N-1, derivative=2)
+A_DD = get_central_diff_matrix(N - 1, derivative=2)
 b_DD = np.zeros((N - 1, 1)).squeeze()
 b_DD[0] = alpha
 b_DD[-1] = beta

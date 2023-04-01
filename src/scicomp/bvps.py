@@ -1,5 +1,6 @@
 def solve_linear_poisson_eq():
     ...
 
+
 def solve_nonlinear_poisson_eq():
     ...

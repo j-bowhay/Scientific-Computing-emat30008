@@ -19,7 +19,7 @@ x = np.linspace(a, b, N + 1)
 x_inner = x[1:-1]
 dx = (b - a) / N
 
-A = get_central_diff_matrix(N-1, derivative=2)
+A = get_central_diff_matrix(N - 1, derivative=2)
 b_DD = np.zeros((N - 1, 1)).squeeze()
 b_DD[0] = alpha
 b_DD[-1] = beta
