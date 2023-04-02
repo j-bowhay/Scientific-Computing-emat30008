@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.testing import assert_allclose
 import pytest
 
 from scicomp.continuation import continuation
@@ -95,3 +96,36 @@ class TestContinuation:
                 max_steps=100,
                 method="cheese",
             )
+
+    def test_equation_natural(self):
+        sol = continuation(
+            eq,
+            variable_kwarg="c",
+            initial_value=-2,
+            step_size=0.001,
+            max_steps=4000,
+            y0=[1.5],
+            root_finder_kwargs={"tol": 1e-12},
+            method="np",
+        )
+
+        assert sol.parameter_values[0] == -2
+        assert_allclose(sol.parameter_values[-1], 0.4, atol=2e-2)
+        x = np.squeeze(sol.state_values)
+        assert_allclose(x**3 - x + sol.parameter_values, 0, atol=1e-12)
+
+    def test_equation_pseudo_arc_length(self):
+        sol = continuation(
+            eq,
+            variable_kwarg="c",
+            initial_value=-2,
+            step_size=0.01,
+            max_steps=400,
+            y0=[1.5],
+            root_finder_kwargs={"tol": 1e-12},
+            method="ps-arc",
+        )
+
+        assert sol.parameter_values[0] == -2
+        x = np.squeeze(sol.state_values)
+        assert_allclose(x**3 - x + sol.parameter_values, 0, atol=1e-12)

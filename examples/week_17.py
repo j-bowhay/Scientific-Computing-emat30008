@@ -12,10 +12,10 @@ sol = continuation(
     eq,
     variable_kwarg="c",
     initial_value=-2,
-    step_size=0.01,
-    max_steps=400,
+    step_size=0.001,
+    max_steps=4000,
     y0=[1.5],
-    root_finder_kwargs={"tol": 1e-6},
+    root_finder_kwargs={"tol": 1e-9},
     method="np",
 )
 
