@@ -62,6 +62,7 @@ class Grid:
 
         self.a = a
         self.b = b
+        self.N = N
         self.x = np.linspace(a, b, N)
 
     @property
@@ -74,6 +75,14 @@ class Grid:
             Location of the inner elements of the grid
         """
         return self.x[1:-1]
+
+    @property
+    def N_inner(self):
+        return self.N - 2
+
+    @property
+    def dx(self):
+        return (self.b - self.a) / (self.N - 1)
 
 
 class BoundaryCondition(ABC):
@@ -100,13 +109,15 @@ class RobinBC(BoundaryCondition):
     ...
 
 
-def get_b_vec_from_BCs(grid: Grid, left_BC: BoundaryCondition, right_BC: BoundaryCondition) -> np.ndarray:
+def get_b_vec_from_BCs(
+    grid: Grid, left_BC: BoundaryCondition, right_BC: BoundaryCondition
+) -> np.ndarray:
     b = np.zeros_like(grid.x_inner)
-    
+
     if isinstance(left_BC, DirichletBC):
         b[0] = left_BC.value
-    
+
     if isinstance(right_BC, DirichletBC):
         b[-1] = right_BC.value
-    
+
     return b
