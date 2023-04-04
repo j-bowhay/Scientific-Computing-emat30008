@@ -2,22 +2,24 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 
-from scicomp.finite_diff import get_central_diff_matrix
+from scicomp.finite_diff import (
+    get_central_diff_matrix,
+    Grid,
+    DirichletBC,
+    get_b_vec_from_BCs,
+)
 
 
 def solve_poisson_linear(a, b, N, alpha, beta, q):
-    x = np.linspace(a, b, N + 1)
-    x_inner = x[1:-1]
-    dx = (b - a) / N
-    A = get_central_diff_matrix(N - 1, derivative=2)
-    b_DD = np.zeros((N - 1, 1))
-    b_DD[0] = alpha
-    b_DD[-1] = beta
+    grid = Grid(a, b, N)
 
-    rhs = -b_DD - (dx**2) * q(x_inner)
+    A = get_central_diff_matrix(grid.N_inner, derivative=2)
+    b_DD = get_b_vec_from_BCs(grid, DirichletBC(alpha), DirichletBC(beta))
+
+    rhs = -b_DD - (grid.dx**2) * q(grid.x_inner)
 
     u_inner = np.linalg.solve(A, rhs).squeeze()
-    return x, np.concatenate([[alpha], u_inner, [beta]])
+    return grid.x, np.concatenate([[alpha], u_inner, [beta]])
 
 
 def solve_bratu(N, mu):
