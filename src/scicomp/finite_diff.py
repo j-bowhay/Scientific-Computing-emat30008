@@ -128,18 +128,62 @@ class RobinBC(BoundaryCondition):
         self.gamma = gamma
 
 
+def get_A_mat_from_BCs(
+    derivative: int, grid: Grid, left_BC: BoundaryCondition, right_BC: BoundaryCondition
+) -> np.ndarray:
+    if derivative != 2:
+        raise NotImplementedError
+
+    if isinstance(left_BC, (DirichletBC, NeumannBC)) and isinstance(
+        right_BC, (DirichletBC, NeumannBC)
+    ):
+        N = grid.N_inner
+        if isinstance(left_BC, NeumannBC):
+            N += 1
+        if isinstance(right_BC, NeumannBC):
+            N += 1
+        return get_central_diff_matrix(N, derivative=2)
+    elif isinstance(left_BC, RobinBC) and isinstance(right_BC, RobinBC):
+        A = get_central_diff_matrix(grid.N, derivative=2)
+        A[0, 0] += 2 * left_BC.delta
+        A[-1, -1] -= 2 * right_BC.delta * grid.dx
+    elif isinstance(left_BC, RobinBC) and isinstance(right_BC, DirichletBC):
+        A = get_central_diff_matrix(grid.N, derivative=2)
+        A[0, 0] += 2 * left_BC.delta
+    elif isinstance(left_BC, DirichletBC) and isinstance(right_BC, (RobinBC)):
+        A = get_central_diff_matrix(grid.N_inner + 1, derivative=2)
+        A[-1, -1] -= right_BC.delta * grid.dx
+    return A
+
+
 def get_b_vec_from_BCs(
     grid: Grid, left_BC: BoundaryCondition, right_BC: BoundaryCondition
 ) -> np.ndarray:
-    b = np.zeros_like(grid.x_inner)
+    # Number of equations depends on the type of boundary condition
+    if isinstance(left_BC, DirichletBC) and isinstance(right_BC, DirichletBC):
+        b = np.zeros_like(grid.x_inner)
+    elif (
+        isinstance(left_BC, DirichletBC) and isinstance(right_BC, (NeumannBC, RobinBC))
+    ) or (
+        isinstance(right_BC, DirichletBC) and isinstance(left_BC, (NeumannBC, RobinBC))
+    ):
+        b = np.zeros((grid.N_inner + 1, 1))
+    elif isinstance(left_BC, (NeumannBC, RobinBC)) and isinstance(
+        right_BC, (NeumannBC, RobinBC)
+    ):
+        b = np.zeros_like(grid.x)
 
     if isinstance(left_BC, DirichletBC):
         b[0] = left_BC.gamma
+    elif isinstance(left_BC, (NeumannBC, RobinBC)):
+        b[0] = -2 * left_BC.delta * grid.dx
     else:
         raise NotImplementedError
 
     if isinstance(right_BC, DirichletBC):
         b[-1] = right_BC.gamma
+    elif isinstance(right_BC, (NeumannBC, RobinBC)):
+        b[-1] = 2 * right_BC.delta * grid.dx
     else:
         raise NotImplementedError
 
@@ -149,7 +193,11 @@ def get_b_vec_from_BCs(
 def apply_BCs_to_soln(
     inner_sol: np.ndarray, left_BC: BoundaryCondition, right_BC: BoundaryCondition
 ) -> np.ndarray:
-    if isinstance(left_BC, DirichletBC) and isinstance(right_BC, DirichletBC):
-        return np.concatenate([[left_BC.gamma], inner_sol, [right_BC.gamma]])
-    else:
-        raise NotImplementedError
+    left_append = []
+    right_append = []
+    if isinstance(left_BC, (DirichletBC, RobinBC)):
+        left_append = [left_BC.gamma]
+    if isinstance(right_BC, (DirichletBC, RobinBC)):
+        right_append = [right_BC.gamma]
+
+    return np.concatenate([left_append, inner_sol, right_append])

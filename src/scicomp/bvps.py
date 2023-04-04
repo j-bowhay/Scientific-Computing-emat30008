@@ -6,11 +6,11 @@ import numpy as np
 import scipy
 
 from scicomp.finite_diff import (
-    Grid,
     BoundaryCondition,
-    get_central_diff_matrix,
-    get_b_vec_from_BCs,
+    Grid,
     apply_BCs_to_soln,
+    get_A_mat_from_BCs,
+    get_b_vec_from_BCs,
 )
 
 
@@ -45,7 +45,7 @@ def solve_linear_poisson_eq(
     np.ndarray
         Solution to the linear poisson equation
     """
-    A = D * get_central_diff_matrix(grid.N_inner, derivative=2)
+    A = D * get_A_mat_from_BCs(2, grid=grid, left_BC=left_BC, right_BC=right_BC)
     b = get_b_vec_from_BCs(grid, left_BC, right_BC)
     rhs = -D * b - (grid.dx**2) * q(grid.x_inner)
 
@@ -91,7 +91,7 @@ def solve_nonlinear_poisson_eq(
     """
     root_finder_kwargs = {} if root_finder_kwargs is None else root_finder_kwargs
 
-    A = get_central_diff_matrix(grid.N_inner, derivative=2)
+    A = get_A_mat_from_BCs(2, grid=grid, left_BC=left_BC, right_BC=right_BC)
     b = get_b_vec_from_BCs(grid, left_BC, right_BC)
 
     def eq(u):

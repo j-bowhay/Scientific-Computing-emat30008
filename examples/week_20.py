@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 from matplotlib.animation import FuncAnimation
-
 from scicomp.finite_diff import get_central_diff_matrix
 
 a = 0
