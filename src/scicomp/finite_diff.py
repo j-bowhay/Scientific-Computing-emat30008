@@ -90,23 +90,42 @@ class BoundaryCondition(ABC):
 
 
 class DirichletBC(BoundaryCondition):
-    def __init__(self, value: float) -> None:
-        """Dirichlet Boundary Condition
+    def __init__(self, gamma: float) -> None:
+        r"""Dirichlet Boundary Condition ``u(b) = \gamma``
+
+        Parameters
+        ----------
+        gamma : float
+            Value of ``u`` at the boundary
+        """
+        self.gamma = gamma
+
+
+class NeumannBC(BoundaryCondition):
+    def __init__(self, delta: float) -> None:
+        r"""Neumann Boundary Condition ``u'(b) = \delta``
 
         Parameters
         ----------
         value : float
-            Value of the boundary condition
+            Value of ``u'`` at the boundary
         """
-        self.value = value
-
-
-class NeumannBC(BoundaryCondition):
-    ...
+        self.value = delta
 
 
 class RobinBC(BoundaryCondition):
-    ...
+    def __init__(self, delta: float, gamma: float) -> None:
+        r"""Robin boundary condition ``u'(b) = delta - gamma u(b)``
+
+        Parameters
+        ----------
+        delta : float
+            Value of the derivative
+        gamma : float
+            Value of the solution
+        """
+        self.delta = delta
+        self.gamma = gamma
 
 
 def get_b_vec_from_BCs(
@@ -115,12 +134,12 @@ def get_b_vec_from_BCs(
     b = np.zeros_like(grid.x_inner)
 
     if isinstance(left_BC, DirichletBC):
-        b[0] = left_BC.value
+        b[0] = left_BC.gamma
     else:
         raise NotImplementedError
 
     if isinstance(right_BC, DirichletBC):
-        b[-1] = right_BC.value
+        b[-1] = right_BC.gamma
     else:
         raise NotImplementedError
 
@@ -131,6 +150,6 @@ def apply_BCs_to_soln(
     inner_sol: np.ndarray, left_BC: BoundaryCondition, right_BC: BoundaryCondition
 ) -> np.ndarray:
     if isinstance(left_BC, DirichletBC) and isinstance(right_BC, DirichletBC):
-        return np.concatenate([[left_BC.value], inner_sol, [right_BC.value]])
+        return np.concatenate([[left_BC.gamma], inner_sol, [right_BC.gamma]])
     else:
         raise NotImplementedError
