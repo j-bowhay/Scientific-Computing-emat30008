@@ -7,6 +7,7 @@ from scicomp.finite_diff import (
     Grid,
     DirichletBC,
     get_b_vec_from_BCs,
+    apply_BCs_soln,
 )
 
 
@@ -14,12 +15,14 @@ def solve_poisson_linear(a, b, N, alpha, beta, q):
     grid = Grid(a, b, N)
 
     A = get_central_diff_matrix(grid.N_inner, derivative=2)
-    b_DD = get_b_vec_from_BCs(grid, DirichletBC(alpha), DirichletBC(beta))
+    left_BC = DirichletBC(alpha)
+    right_BC = DirichletBC(beta)
+    b_DD = get_b_vec_from_BCs(grid, left_BC, right_BC)
 
     rhs = -b_DD - (grid.dx**2) * q(grid.x_inner)
 
     u_inner = np.linalg.solve(A, rhs).squeeze()
-    return grid.x, np.concatenate([[alpha], u_inner, [beta]])
+    return grid.x, apply_BCs_soln(u_inner, left_BC, right_BC)
 
 
 def solve_bratu(N, mu):

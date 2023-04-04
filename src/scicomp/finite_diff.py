@@ -116,8 +116,21 @@ def get_b_vec_from_BCs(
 
     if isinstance(left_BC, DirichletBC):
         b[0] = left_BC.value
+    else:
+        raise NotImplementedError
 
     if isinstance(right_BC, DirichletBC):
         b[-1] = right_BC.value
+    else:
+        raise NotImplementedError
 
     return b
+
+
+def apply_BCs_soln(
+    inner_sol: np.ndarray, left_BC: BoundaryCondition, right_BC: BoundaryCondition
+) -> np.ndarray:
+    if isinstance(left_BC, DirichletBC) and isinstance(right_BC, DirichletBC):
+        return np.concatenate([[left_BC.value], inner_sol, [right_BC.value]])
+    else:
+        raise NotImplementedError
