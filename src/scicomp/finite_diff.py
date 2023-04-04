@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from abc import ABC
 
 import numpy as np
@@ -96,3 +98,15 @@ class NeumannBC(BoundaryCondition):
 
 class RobinBC(BoundaryCondition):
     ...
+
+
+def get_b_vec_from_BCs(grid: Grid, left_BC: BoundaryCondition, right_BC: BoundaryCondition) -> np.ndarray:
+    b = np.zeros_like(grid.x_inner)
+    
+    if isinstance(left_BC, DirichletBC):
+        b[0] = left_BC.value
+    
+    if isinstance(right_BC, DirichletBC):
+        b[-1] = right_BC.value
+    
+    return b
