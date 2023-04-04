@@ -6,7 +6,6 @@ import numpy as np
 import scipy
 
 from scicomp.finite_diff import (
-    BoundaryCondition,
     Grid,
     apply_BCs_to_soln,
     get_A_mat_from_BCs,
@@ -16,8 +15,6 @@ from scicomp.finite_diff import (
 
 def solve_linear_poisson_eq(
     grid: Grid,
-    left_BC: BoundaryCondition,
-    right_BC: BoundaryCondition,
     D: float,
     q: Callable[[np.ndarray], np.ndarray],
 ) -> np.ndarray:
@@ -45,20 +42,18 @@ def solve_linear_poisson_eq(
     np.ndarray
         Solution to the linear poisson equation
     """
-    A = D * get_A_mat_from_BCs(2, grid=grid, left_BC=left_BC, right_BC=right_BC)
-    b = get_b_vec_from_BCs(grid, left_BC, right_BC)
+    A = D * get_A_mat_from_BCs(2, grid=grid)
+    b = get_b_vec_from_BCs(grid)
     rhs = -D * b - (grid.dx**2) * q(grid.x_inner)
 
     u_inner = scipy.linalg.solve(A, rhs).squeeze()
 
-    return apply_BCs_to_soln(u_inner, left_BC, right_BC)
+    return apply_BCs_to_soln(u_inner, grid=grid)
 
 
 def solve_nonlinear_poisson_eq(
     u0: np.ndarray,
     grid: Grid,
-    left_BC: BoundaryCondition,
-    right_BC: BoundaryCondition,
     D: float,
     q: Callable[[np.ndarray, np.ndarray], np.ndarray],
     root_finder_kwargs: dict = None,
@@ -91,8 +86,8 @@ def solve_nonlinear_poisson_eq(
     """
     root_finder_kwargs = {} if root_finder_kwargs is None else root_finder_kwargs
 
-    A = get_A_mat_from_BCs(2, grid=grid, left_BC=left_BC, right_BC=right_BC)
-    b = get_b_vec_from_BCs(grid, left_BC, right_BC)
+    A = get_A_mat_from_BCs(2, grid=grid)
+    b = get_b_vec_from_BCs(grid=grid)
 
     def eq(u):
         return D * (A @ u + b) + (grid.dx**2) * q(u, grid.x_inner)
@@ -100,6 +95,6 @@ def solve_nonlinear_poisson_eq(
     sol = scipy.optimize.root(eq, u0, **root_finder_kwargs)
 
     if sol.success:
-        return apply_BCs_to_soln(sol.x, left_BC=left_BC, right_BC=right_BC)
+        return apply_BCs_to_soln(sol.x, grid=grid)
     else:
         raise RuntimeError("Solution failed to converge.")

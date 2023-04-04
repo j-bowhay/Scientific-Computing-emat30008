@@ -43,7 +43,14 @@ def get_central_diff_matrix(
 
 
 class Grid:
-    def __init__(self, a: float, b: float, N: int) -> None:
+    def __init__(
+        self,
+        a: float,
+        b: float,
+        N: int,
+        left_BC: BoundaryCondition,
+        right_BC: BoundaryCondition,
+    ) -> None:
         """Grid class for representing the domain in finite difference methods
 
         Parameters
@@ -54,6 +61,10 @@ class Grid:
             Position of the right side of the domain
         N : int
             Number of points to divide the domain into
+        left_BC : BoundaryCondition
+            BC at the left of the domain
+        right_BC : BoundaryCondition
+            BC at the right of the domain
         """
         if b <= a:
             raise ValueError("'b' must be greater than 'a'")
@@ -64,21 +75,43 @@ class Grid:
         self.b = b
         self.N = N
         self.x = np.linspace(a, b, N)
+        self.left_BC = left_BC
+        self.right_BC = right_BC
 
     @property
     def x_inner(self) -> np.ndarray:
-        """Get the inner points of the domain
+        """Get the points of the domain required for computation based on the BCs
 
         Returns
         -------
         np.ndarray
             Location of the inner elements of the grid
         """
-        return self.x[1:-1]
+        if isinstance(self.left_BC, DirichletBC) and isinstance(
+            self.right_BC, DirichletBC
+        ):
+            return self.x[1:-1]
+        elif isinstance(self.left_BC, DirichletBC) and isinstance(
+            self.right_BC, (NeumannBC, RobinBC)
+        ):
+            return self.x[1:]
+        elif isinstance(self.right_BC, DirichletBC) and isinstance(
+            self.left_BC, (NeumannBC, RobinBC)
+        ):
+            return self.x[:-1]
+        elif isinstance(self.left_BC, (NeumannBC, RobinBC)) and isinstance(
+            self.right_BC, (NeumannBC, RobinBC)
+        ):
+            return self.x
 
     @property
     def N_inner(self):
-        return self.N - 2
+        N = self.N - 2
+        if isinstance(self.left_BC, (NeumannBC, RobinBC)):
+            N += 1
+        if isinstance(self.right_BC, (NeumannBC, RobinBC)):
+            N += 1
+        return N
 
     @property
     def dx(self):
@@ -110,7 +143,7 @@ class NeumannBC(BoundaryCondition):
         value : float
             Value of ``u'`` at the boundary
         """
-        self.value = delta
+        self.delta = delta
 
 
 class RobinBC(BoundaryCondition):
@@ -128,37 +161,37 @@ class RobinBC(BoundaryCondition):
         self.gamma = gamma
 
 
-def get_A_mat_from_BCs(
-    derivative: int, grid: Grid, left_BC: BoundaryCondition, right_BC: BoundaryCondition
-) -> np.ndarray:
+def get_A_mat_from_BCs(derivative: int, grid: Grid) -> np.ndarray:
     if derivative != 2:
         raise NotImplementedError
 
-    if isinstance(left_BC, (DirichletBC, NeumannBC)) and isinstance(
-        right_BC, (DirichletBC, NeumannBC)
-    ):
-        N = grid.N_inner
-        if isinstance(left_BC, NeumannBC):
-            N += 1
-        if isinstance(right_BC, NeumannBC):
-            N += 1
-        return get_central_diff_matrix(N, derivative=2)
-    elif isinstance(left_BC, RobinBC) and isinstance(right_BC, RobinBC):
-        A = get_central_diff_matrix(grid.N, derivative=2)
-        A[0, 0] += 2 * left_BC.delta
-        A[-1, -1] -= 2 * right_BC.delta * grid.dx
-    elif isinstance(left_BC, RobinBC) and isinstance(right_BC, DirichletBC):
-        A = get_central_diff_matrix(grid.N, derivative=2)
-        A[0, 0] += 2 * left_BC.delta
-    elif isinstance(left_BC, DirichletBC) and isinstance(right_BC, (RobinBC)):
-        A = get_central_diff_matrix(grid.N_inner + 1, derivative=2)
-        A[-1, -1] -= right_BC.delta * grid.dx
+    left_BC = grid.left_BC
+    right_BC = grid.right_BC
+
+    A = get_central_diff_matrix(grid.N_inner, derivative=2)
+
+    if isinstance(left_BC, DirichletBC) and isinstance(right_BC, DirichletBC):
+        return A
+
+    if isinstance(left_BC, RobinBC):
+        A[0, 0] += 2 * left_BC.gamma * grid.dx
+        A[0, 1] += 1
+    elif isinstance(left_BC, NeumannBC):
+        A[0, 1] += 1
+
+    if isinstance(right_BC, RobinBC):
+        A[-1, -1] -= 2 * right_BC.gamma * grid.dx
+        A[-1, -2] += 1
+    elif isinstance(right_BC, NeumannBC):
+        A[-1, -2] += 1
+
     return A
 
 
-def get_b_vec_from_BCs(
-    grid: Grid, left_BC: BoundaryCondition, right_BC: BoundaryCondition
-) -> np.ndarray:
+def get_b_vec_from_BCs(grid: Grid) -> np.ndarray:
+    left_BC = grid.left_BC
+    right_BC = grid.right_BC
+
     # Number of equations depends on the type of boundary condition
     if isinstance(left_BC, DirichletBC) and isinstance(right_BC, DirichletBC):
         b = np.zeros_like(grid.x_inner)
@@ -167,7 +200,7 @@ def get_b_vec_from_BCs(
     ) or (
         isinstance(right_BC, DirichletBC) and isinstance(left_BC, (NeumannBC, RobinBC))
     ):
-        b = np.zeros((grid.N_inner + 1, 1))
+        b = np.zeros((grid.N_inner, 1))
     elif isinstance(left_BC, (NeumannBC, RobinBC)) and isinstance(
         right_BC, (NeumannBC, RobinBC)
     ):
@@ -190,14 +223,15 @@ def get_b_vec_from_BCs(
     return b
 
 
-def apply_BCs_to_soln(
-    inner_sol: np.ndarray, left_BC: BoundaryCondition, right_BC: BoundaryCondition
-) -> np.ndarray:
+def apply_BCs_to_soln(inner_sol: np.ndarray, grid: Grid) -> np.ndarray:
+    left_BC = grid.left_BC
+    right_BC = grid.right_BC
+
     left_append = []
     right_append = []
-    if isinstance(left_BC, (DirichletBC, RobinBC)):
+    if isinstance(left_BC, DirichletBC):
         left_append = [left_BC.gamma]
-    if isinstance(right_BC, (DirichletBC, RobinBC)):
+    if isinstance(right_BC, DirichletBC):
         right_append = [right_BC.gamma]
 
     return np.concatenate([left_append, inner_sol, right_append])
