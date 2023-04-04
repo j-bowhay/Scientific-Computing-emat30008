@@ -127,7 +127,7 @@ def get_b_vec_from_BCs(
     return b
 
 
-def apply_BCs_soln(
+def apply_BCs_to_soln(
     inner_sol: np.ndarray, left_BC: BoundaryCondition, right_BC: BoundaryCondition
 ) -> np.ndarray:
     if isinstance(left_BC, DirichletBC) and isinstance(right_BC, DirichletBC):

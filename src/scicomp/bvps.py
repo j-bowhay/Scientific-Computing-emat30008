@@ -10,7 +10,7 @@ from scicomp.finite_diff import (
     BoundaryCondition,
     get_central_diff_matrix,
     get_b_vec_from_BCs,
-    apply_BCs_soln,
+    apply_BCs_to_soln,
 )
 
 
@@ -24,6 +24,7 @@ def solve_linear_poisson_eq(
     r"""Convenience function for solving the linear poisson equation.
 
     .. math::
+
         D \frac{du}{dx} + q(x) = 0
 
     Parameters
@@ -37,7 +38,7 @@ def solve_linear_poisson_eq(
     D : float
         Coefficient of diffusivity
     q : Callable[[np.ndarray], np.ndarray]
-        Source term, must have signature `q(x)`
+        Source term, must have signature ``q(x)``
 
     Returns
     -------
@@ -45,13 +46,60 @@ def solve_linear_poisson_eq(
         Solution to the linear poisson equation
     """
     A = D * get_central_diff_matrix(grid.N_inner, derivative=2)
-    b_DD = get_b_vec_from_BCs(grid, left_BC, right_BC)
-    rhs = -D * b_DD - (grid.dx**2) * q(grid.x_inner)
+    b = get_b_vec_from_BCs(grid, left_BC, right_BC)
+    rhs = -D * b - (grid.dx**2) * q(grid.x_inner)
 
     u_inner = scipy.linalg.solve(A, rhs).squeeze()
 
-    return apply_BCs_soln(u_inner, left_BC, right_BC)
+    return apply_BCs_to_soln(u_inner, left_BC, right_BC)
 
 
-def solve_nonlinear_poisson_eq():
-    ...
+def solve_nonlinear_poisson_eq(
+    u0: np.ndarray,
+    grid: Grid,
+    left_BC: BoundaryCondition,
+    right_BC: BoundaryCondition,
+    D: float,
+    q: Callable[[np.ndarray, np.ndarray], np.ndarray],
+    root_finder_kwargs: dict = None,
+) -> np.ndarray:
+    r"""Convenience function for solving the non-linear poisson equation.
+
+    .. math::
+
+        D \frac{du}{dx} + q(u,x) = 0
+
+    Parameters
+    ----------
+    u0 : np.ndarray
+        Initial guess at the solution
+    grid : Grid
+        Discretisation of the domain
+    left_BC : BoundaryCondition
+        Boundary condition at the left of the domain
+    right_BC : BoundaryCondition
+        Boundary condition at the right of the domain
+    D : float
+        Coefficient of diffusivity
+    q : Callable[[np.ndarray, np.ndarray], np.ndarray]
+        Source term, must have signature ``q(u,x)``
+
+    Returns
+    -------
+    np.ndarray
+        Solution to the non-linear poisson equation
+    """
+    root_finder_kwargs = {} if root_finder_kwargs is None else root_finder_kwargs
+
+    A = get_central_diff_matrix(grid.N_inner, derivative=2)
+    b = get_b_vec_from_BCs(grid, left_BC, right_BC)
+
+    def eq(u):
+        return D * (A @ u + b) + (grid.dx**2) * q(u, grid.x_inner)
+
+    sol = scipy.optimize.root(eq, u0, **root_finder_kwargs)
+
+    if sol.success:
+        return apply_BCs_to_soln(sol.x, left_BC=left_BC, right_BC=right_BC)
+    else:
+        raise RuntimeError("Solution failed to converge.")
