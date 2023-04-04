@@ -72,3 +72,27 @@ class Grid:
             Location of the inner elements of the grid
         """
         return self.x[1:-1]
+
+
+class BoundaryCondition(ABC):
+    ...
+
+
+class DirichletBC(BoundaryCondition):
+    def __init__(self, value: float) -> None:
+        """Dirichlet Boundary Condition
+
+        Parameters
+        ----------
+        value : float
+            Value of the boundary condition
+        """
+        self.value = value
+
+
+class NeumannBC(BoundaryCondition):
+    ...
+
+
+class RobinBC(BoundaryCondition):
+    ...
