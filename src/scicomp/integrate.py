@@ -548,7 +548,6 @@ def _solve_to_adaptive(
     # Check if integration is finished
     while (t[-1] - t_span[-1]) < 0:
         step_accepted = False
-        min_step = 10 * (np.nextafter(t[-1], np.inf) - t[-1])
         while not step_accepted:
             y1, local_err = error_estimate(f, t[-1], y[-1], h, method)
 
@@ -562,12 +561,6 @@ def _solve_to_adaptive(
                 max(fac_min, safety_fac * (1 / err) ** (1 / (method.order + 1))),
             )
             h_new = max_step if h_new > max_step else h_new
-
-            if h_new < min_step:
-                raise RuntimeError(
-                    "Reached minimum possible step size without error reaching"
-                    " tolerance."
-                )
 
             # accept the step
             if (err <= 1 and h <= max_step) or final_step:
