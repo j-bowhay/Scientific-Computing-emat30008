@@ -2,11 +2,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.animation import FuncAnimation
 from scicomp.finite_diff import DirichletBC, Grid
-from scicomp.pdes import solve_linear_diffusion_crank_nicolson
+from scicomp.pdes import solve_linear_diffusion_implicit
 
 left_BC = right_BC = DirichletBC(0)
 grid = Grid(0, 1, 100, left_BC=left_BC, right_BC=right_BC)
-u = solve_linear_diffusion_crank_nicolson(
+u = solve_linear_diffusion_implicit(
     grid=grid, D=0.1, dt=0.01, steps=1000, u0_func=lambda x: np.sin(np.pi * x)
 )
 
