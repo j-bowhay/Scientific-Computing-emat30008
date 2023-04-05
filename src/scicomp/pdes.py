@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Callable
+from typing import Callable, Optional
+from dataclasses import dataclass
 
 import numpy as np
 import scipy
@@ -13,13 +14,45 @@ from scicomp.finite_diff import (
 )
 
 
-def solve_linear_diffusion_implicit(
+@dataclass
+class PDEResult:
+    t: np.ndarray
+    u: np.ndarray
+
+
+def solve_diffusion_method_lines(
+    grid: Grid,
+    D: float,
+    u0_func: Callable[[np.ndarray], np.ndarray],
+    t_span: tuple[float, float],
+    source_term: Callable[
+        [np.ndarray, float, np.ndarray], np.ndarray
+    ] = lambda u, t, x: 0,
+    integrator: Callable = scipy.integrate.solve_ivp,
+    integrator_kwargs: Optional[dict] = None,
+) -> PDEResult:
+    integrator_kwargs = {} if integrator_kwargs is None else integrator_kwargs
+
+    A = get_A_mat_from_BCs(2, grid=grid)
+    b = get_b_vec_from_BCs(grid)
+
+    def rhs(t, y):
+        return (D / (grid.dx) ** 2) * (A @ y + b) + source_term(y, t, grid.x_inner)
+
+    u0 = u0_func(grid.x_inner)
+
+    sol = integrator(rhs, y0=u0, t_span=t_span, **integrator_kwargs)
+
+    return PDEResult(sol.t, apply_BCs_to_soln(sol.y.T, grid))
+
+
+def solve_diffusion_implicit(
     grid: Grid,
     D: float,
     dt: float,
     steps: int,
     u0_func: Callable[[np.ndarray], np.ndarray],
-    method: str = "crank-nicolson"
+    method: str = "crank-nicolson",
 ) -> np.ndarray:
     if dt <= 0:
         raise ValueError("Invalid 'dt'")

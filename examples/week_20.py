@@ -3,6 +3,7 @@ import numpy as np
 import scipy
 from matplotlib.animation import FuncAnimation
 from scicomp.finite_diff import get_central_diff_matrix
+import scicomp
 
 a = 0
 b = 1
@@ -31,7 +32,6 @@ def rhs(t, y):
 sol = scipy.integrate.solve_ivp(
     rhs, t_span, np.zeros_like(b_DD), rtol=1e-12, atol=1e-12
 )
-# sol = scicomp.integrate.solve_ivp(rhs, t_span=t_span, y0=np.zeros_like(b_DD), r_tol=1e-9, method="dopri45")
 U = sol.y.T
 
 fig, ax = plt.subplots()
