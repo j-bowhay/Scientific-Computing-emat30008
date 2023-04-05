@@ -42,6 +42,7 @@ def solve_linear_poisson_eq(
     np.ndarray
         Solution to the linear poisson equation
     """
+    # generate finite difference matrix
     A = D * get_A_mat_from_BCs(2, grid=grid)
     b = get_b_vec_from_BCs(grid)
     rhs = -D * b - (grid.dx**2) * q(grid.x_inner)
@@ -86,9 +87,11 @@ def solve_nonlinear_poisson_eq(
     """
     root_finder_kwargs = {} if root_finder_kwargs is None else root_finder_kwargs
 
+    # generate finite difference matrix
     A = get_A_mat_from_BCs(2, grid=grid)
     b = get_b_vec_from_BCs(grid=grid)
 
+    # function to find the root of
     def eq(u):
         return D * (A @ u + b) + (grid.dx**2) * q(u, grid.x_inner)
 

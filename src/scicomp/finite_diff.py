@@ -105,7 +105,14 @@ class Grid:
             return self.x
 
     @property
-    def N_inner(self):
+    def N_inner(self) -> int:
+        """Returns the number of grid points required for the computation based on the BCs
+
+        Returns
+        -------
+        int
+           Number of grid points needed
+        """
         N = self.N - 2
         if isinstance(self.left_BC, (NeumannBC, RobinBC)):
             N += 1
@@ -114,7 +121,14 @@ class Grid:
         return N
 
     @property
-    def dx(self):
+    def dx(self) -> float:
+        """Distance between grid points
+
+        Returns
+        -------
+        float
+            Distance between grid points
+        """
         return (self.b - self.a) / (self.N - 1)
 
 
@@ -162,6 +176,21 @@ class RobinBC(BoundaryCondition):
 
 
 def get_A_mat_from_BCs(derivative: int, grid: Grid) -> np.ndarray:
+    """Generates finite difference matrix to solve PDE problems based on the boundary
+    conditions.
+
+    Parameters
+    ----------
+    derivative : int
+        Order of the derivative
+    grid : Grid
+        Grid object containing boundary conditions
+
+    Returns
+    -------
+    np.ndarray
+        Finite difference matrix
+    """
     if derivative != 2:
         raise NotImplementedError
 
@@ -173,6 +202,7 @@ def get_A_mat_from_BCs(derivative: int, grid: Grid) -> np.ndarray:
     if isinstance(left_BC, DirichletBC) and isinstance(right_BC, DirichletBC):
         return A
 
+    # Changes to the finite difference matrix are required based on the boundary conditions
     if isinstance(left_BC, RobinBC):
         A[0, 0] += 2 * left_BC.gamma * grid.dx
         A[0, 1] += 1
