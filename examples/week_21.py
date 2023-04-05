@@ -5,16 +5,18 @@ from scicomp.finite_diff import DirichletBC, Grid
 from scicomp.pdes import solve_linear_diffusion_crank_nicolson
 
 left_BC = right_BC = DirichletBC(0)
-grid = Grid(0,1, 100, left_BC=left_BC, right_BC=right_BC)
-u = solve_linear_diffusion_crank_nicolson(grid=grid, D=0.1, dt=0.01, steps=1000, u0_func=lambda x: np.sin(np.pi*x))
+grid = Grid(0, 1, 100, left_BC=left_BC, right_BC=right_BC)
+u = solve_linear_diffusion_crank_nicolson(
+    grid=grid, D=0.1, dt=0.01, steps=1000, u0_func=lambda x: np.sin(np.pi * x)
+)
 
 fig, ax = plt.subplots()
 ax.set_ylim([0, np.amax(u)])
-(line1,) = ax.plot(grid.x_inner, u[0, :])
+(line1,) = ax.plot(grid.x, u[0, :])
 
 
 def update(frame):
-    line1.set_data(grid.x_inner, u[frame, :])
+    line1.set_data(grid.x, u[frame, :])
     return (line1,)
 
 

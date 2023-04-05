@@ -95,6 +95,9 @@ class TestSolveLinearPoissonEquation:
         assert_allclose(sol, 2 * x - 1, atol=1e-12)
 
 
+TestSolveLinearPoissonEquation().test_neumann()
+
+
 class TestSolveNonLinearPoissonEquation:
     # Currently only has tests with linear source terms as these are easier to find
     # analytical solutions to

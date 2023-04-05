@@ -226,12 +226,13 @@ def get_b_vec_from_BCs(grid: Grid) -> np.ndarray:
 def apply_BCs_to_soln(inner_sol: np.ndarray, grid: Grid) -> np.ndarray:
     left_BC = grid.left_BC
     right_BC = grid.right_BC
+    inner_sol = np.atleast_2d(inner_sol)
 
-    left_append = []
-    right_append = []
+    left_append = [[]]
+    right_append = [[]]
     if isinstance(left_BC, DirichletBC):
-        left_append = [left_BC.gamma]
+        left_append = np.broadcast_to([left_BC.gamma], (inner_sol.shape[0], 1))
     if isinstance(right_BC, DirichletBC):
-        right_append = [right_BC.gamma]
+        right_append = np.broadcast_to([right_BC.gamma], (inner_sol.shape[0], 1))
 
-    return np.concatenate([left_append, inner_sol, right_append])
+    return np.hstack([left_append, inner_sol, right_append]).squeeze()
