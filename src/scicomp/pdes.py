@@ -32,14 +32,16 @@ def solve_linear_diffusion_crank_nicolson(
     C = (dt * D) / (grid.dx**2)
 
     # preallocate and apply ICs
-    u = np.empty((steps, grid.N_inner))
+    u = np.empty((steps + 1, grid.N_inner))
     u[0, :] = u0_func(grid.x_inner)
 
     A = get_A_mat_from_BCs(2, grid=grid)
     b = get_b_vec_from_BCs(grid)
 
     lhs = np.eye(*A.shape) - 0.5 * C * A
-    for i in range(1, steps):
+
+    # step through time
+    for i in range(1, steps + 1):
         rhs = (np.eye(*A.shape) + 0.5 * C * A) @ u[i - 1, :] + C * b
         u[i, :] = scipy.linalg.solve(lhs, rhs)
 
