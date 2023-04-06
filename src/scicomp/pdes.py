@@ -6,6 +6,7 @@ from typing import Callable, Optional
 import numpy as np
 import scipy
 
+from scicomp.integrate import solve_ivp
 from scicomp.finite_diff import (
     Grid,
     apply_BCs_to_soln,
@@ -28,7 +29,7 @@ def solve_diffusion_method_lines(
     source_term: Callable[
         [np.ndarray, float, np.ndarray], np.ndarray
     ] = lambda u, t, x: np.zeros_like(x),
-    integrator: Callable = scipy.integrate.solve_ivp,
+    integrator: Callable = solve_ivp,
     integrator_kwargs: Optional[dict] = None,
 ) -> PDEResult:
     integrator_kwargs = {} if integrator_kwargs is None else integrator_kwargs
