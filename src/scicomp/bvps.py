@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Callable
+from typing import Callable, Optional
 
 import numpy as np
 import scipy
@@ -57,7 +57,7 @@ def solve_nonlinear_poisson_eq(
     grid: Grid,
     D: float,
     q: Callable[[np.ndarray, np.ndarray], np.ndarray],
-    root_finder_kwargs: dict = None,
+    root_finder_kwargs: Optional[dict] = None,
 ) -> np.ndarray:
     r"""Convenience function for solving the non-linear poisson equation.
 

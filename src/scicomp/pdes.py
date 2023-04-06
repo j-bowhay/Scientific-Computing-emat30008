@@ -27,7 +27,7 @@ def solve_diffusion_method_lines(
     t_span: tuple[float, float],
     source_term: Callable[
         [np.ndarray, float, np.ndarray], np.ndarray
-    ] = lambda u, t, x: 0,
+    ] = lambda u, t, x: np.zeros_like(x),
     integrator: Callable = scipy.integrate.solve_ivp,
     integrator_kwargs: Optional[dict] = None,
 ) -> PDEResult:
@@ -71,14 +71,14 @@ def solve_diffusion_implicit(
     b = get_b_vec_from_BCs(grid)
 
     if method == "crank-nicolson":
-        lhs = np.eye(*A.shape) - 0.5 * C * A
+        lhs = np.eye(*A.shape) - 0.5 * C * A  # type: ignore
     else:
-        lhs = np.eye(*A.shape) - C * A
+        lhs = np.eye(*A.shape) - C * A  # type: ignore
 
     # step through time
     for i in range(1, steps + 1):
         if method == "crank-nicolson":
-            rhs = (np.eye(*A.shape) + 0.5 * C * A) @ u[i - 1, :] + C * b
+            rhs = (np.eye(*A.shape) + 0.5 * C * A) @ u[i - 1, :] + C * b  # type: ignore
         else:
             rhs = u[i - 1, :] + C * b
         u[i, :] = scipy.linalg.solve(lhs, rhs)

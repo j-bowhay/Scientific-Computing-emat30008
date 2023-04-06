@@ -463,7 +463,7 @@ def _embedded_error_estimate(
     y: np.ndarray,
     h: float,
     method: _RungeKuttaStep,
-) -> tuple[np.ndarray, Optional[np.ndarray]]:
+) -> tuple[np.ndarray, np.ndarray]:
     """Error estimate for solving from ``y_n`` to ``y_n+1`` using the steppers
     embedded error estimate.
 
@@ -489,7 +489,7 @@ def _embedded_error_estimate(
     y1 = step.y
     local_err = step.error_estimate
 
-    return y1, local_err
+    return y1, local_err  # type:ignore
 
 
 def _solve_to_adaptive(

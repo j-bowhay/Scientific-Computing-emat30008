@@ -119,5 +119,5 @@ def continuation(
             else:
                 break
 
-    augmented_param = np.asarray(augmented_param)
-    return ContinuationResult(augmented_param[:, 1:], augmented_param[:, 0])
+    augmented_param_array = np.asarray(augmented_param)
+    return ContinuationResult(augmented_param_array[:, 1:], augmented_param_array[:, 0])

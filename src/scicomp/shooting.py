@@ -160,12 +160,14 @@ def find_limit_cycle(
     ivp_solver_kwargs = dict() if ivp_solver_kwargs is None else ivp_solver_kwargs
     root_finder_kwargs = dict() if root_finder_kwargs is None else root_finder_kwargs
 
-    def G(x: npt.ArrayLike) -> npt.ArrayLike:
+    def G(x: np.ndarray) -> npt.ArrayLike:
         """Defines shooting function to fine the zeros of"""
         # y(0) - y(T)
         period_condition = (
             x[:-1]
-            - ivp_solver(f, t_span=(0, x[-1]), y0=x[:-1], **ivp_solver_kwargs).y[:, -1]
+            - ivp_solver(
+                f, t_span=(0, x[-1]), y0=x[:-1], **ivp_solver_kwargs  # type:ignore
+            ).y[:, -1]
         )
         return [*period_condition, phase_condition(f, x[:-1])]
 

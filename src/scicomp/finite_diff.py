@@ -103,6 +103,8 @@ class Grid:
             self.right_BC, (NeumannBC, RobinBC)
         ):
             return self.x
+        else:
+            raise NotImplementedError
 
     @property
     def N_inner(self) -> int:
@@ -262,8 +264,8 @@ def apply_BCs_to_soln(inner_sol: np.ndarray, grid: Grid) -> np.ndarray:
     right_BC = grid.right_BC
     inner_sol = np.atleast_2d(inner_sol)
 
-    left_append = [[]]
-    right_append = [[]]
+    left_append = np.array([[]])
+    right_append = np.array([[]])
     if isinstance(left_BC, DirichletBC):
         left_append = np.broadcast_to([left_BC.gamma], (inner_sol.shape[0], 1))
     if isinstance(right_BC, DirichletBC):
