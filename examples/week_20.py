@@ -1,49 +1,24 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy
 from matplotlib.animation import FuncAnimation
-from scicomp.finite_diff import get_central_diff_matrix
-import scicomp
+from scicomp.finite_diff import DirichletBC, Grid
+from scicomp.pdes import solve_diffusion_method_lines
 
-a = 0
-b = 1
-t_span = (0, 1)
-alpha = 0
-beta = 0
-D = 1
-mu = 4
+left_BC = right_BC = DirichletBC(0)
+grid = Grid(0, 1, 30, left_BC, right_BC)
 
-N = 20
-
-x = np.linspace(a, b, N + 1)
-x_inner = x[1:-1]
-dx = (b - a) / N
-
-A = get_central_diff_matrix(N - 1, derivative=2)
-b_DD = np.zeros((N - 1, 1)).squeeze()
-b_DD[0] = alpha
-b_DD[-1] = beta
-
-
-def rhs(t, y):
-    return (D / (dx) ** 2) * (A @ y + b_DD) + np.exp(mu * y)
-
-
-sol = scipy.integrate.solve_ivp(
-    rhs, t_span, np.zeros_like(b_DD), rtol=1e-12, atol=1e-12
-)
-U = sol.y.T
+sol = solve_diffusion_method_lines(grid, 1, lambda x: np.sin(np.pi * x), t_span=(0, 10))
 
 fig, ax = plt.subplots()
-ax.set_ylim([0, np.amax(U)])
-(line1,) = ax.plot(x_inner, U[0, :])
+ax.set_ylim([0, np.amax(sol.u)])
+(line1,) = ax.plot(grid.x, sol.u[0, :])
 
 
 def update(frame):
-    line1.set_data(x_inner, U[frame, :])
+    line1.set_data(grid.x, sol.u[frame, :])
     return (line1,)
 
 
-ani = FuncAnimation(fig, update, frames=range(U.shape[0]), interval=1)
+ani = FuncAnimation(fig, update, frames=range(sol.t.size), interval=1)
 
 plt.show()
