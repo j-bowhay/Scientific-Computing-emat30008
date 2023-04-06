@@ -709,7 +709,7 @@ def solve_ivp(
         Initial conditions
     t_span : tuple[float, float]
         Interval of integration
-    method : str
+    method : str, optional
         The integrator to use.
 
         Methods with embedded error estimates:
@@ -732,7 +732,11 @@ def solve_ivp(
         -``"rk4"``: Classic fourth order Runge-Kutta
         -``"rk38"``: Fourth order Runge-Kutta 3/8-rule
         -``"ralston4"``: Ralston's fourth-order method
-    h : Optional[float], optional
+    mode : str, optional
+        Which mode to run in. Either ``"adaptive"`` for adaptive step sizing using
+        either Richardson extrapolation or an embedded error estimate or ``"fixed"``
+        for fixed time stepping.
+    h : float, optional
         Step size. If `mode=="fixed"`` then this is used as a
         fixed step size for the integration scheme. Otherwise this is the initial step
         size used in the adaptive integration scheme.
