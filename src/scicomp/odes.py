@@ -71,8 +71,8 @@ def hopf_normal(t: float, y: np.ndarray, beta: float, rho: float) -> npt.ArrayLi
 
         \newcommand{\diff}[2]{\frac{\mathrm{d}#1}{\mathrm{d}#2}}
         \begin{align}
-        \diff{u_1}{t} &= \beta u_1 - u_2 + \sigma u_1\left(u_1^2 + u_2^2\right),\\
-        \diff{u_2}{t} &= u_1 + \beta u_2 + \sigma u_2\left(u_1^2 + u_2^2\right),
+        \diff{u_1}{t} &= \beta u_1 - u_2 + \rho u_1\left(u_1^2 + u_2^2\right),\\
+        \diff{u_2}{t} &= u_1 + \beta u_2 + \rho u_2\left(u_1^2 + u_2^2\right),
         \end{align}
 
     Parameters

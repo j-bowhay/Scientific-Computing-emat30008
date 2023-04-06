@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
-from scicomp.continuation import continuation
+from scicomp.continuation import numerical_continuation
 
 
 def eq(x, c):
@@ -12,7 +12,7 @@ class TestContinuation:
     def test_not_callable_equation(self):
         msg = "'equation' must be callable"
         with pytest.raises(ValueError, match=msg):
-            continuation(
+            numerical_continuation(
                 "x^2 + c",
                 variable_kwarg="c",
                 initial_value=0,
@@ -24,7 +24,7 @@ class TestContinuation:
     def test_param_not_in_sig(self):
         msg = "'variable_kwarg' is not a valid parameter to vary in 'equation'"
         with pytest.raises(ValueError, match=msg):
-            continuation(
+            numerical_continuation(
                 eq,
                 variable_kwarg="b",
                 initial_value=0,
@@ -36,7 +36,7 @@ class TestContinuation:
     def test_extra_params_not_in_sig(self):
         msg = "'fixed_kwargs' are not valid inputs to 'equation'"
         with pytest.raises(ValueError, match=msg):
-            continuation(
+            numerical_continuation(
                 eq,
                 variable_kwarg="c",
                 initial_value=0,
@@ -49,7 +49,7 @@ class TestContinuation:
     def test_invalid_step_size(self):
         msg = "'step_size' must be positive"
         with pytest.raises(ValueError, match=msg):
-            continuation(
+            numerical_continuation(
                 eq,
                 variable_kwarg="c",
                 initial_value=0,
@@ -61,7 +61,7 @@ class TestContinuation:
     def test_invalid_max_steps(self):
         msg = "'max_steps' must be positive"
         with pytest.raises(ValueError, match=msg):
-            continuation(
+            numerical_continuation(
                 eq,
                 variable_kwarg="c",
                 initial_value=0,
@@ -73,7 +73,7 @@ class TestContinuation:
     def test_invalid_discretisation(self):
         msg = "'discretisation' must be callable"
         with pytest.raises(ValueError, match=msg):
-            continuation(
+            numerical_continuation(
                 eq,
                 variable_kwarg="c",
                 initial_value=0,
@@ -86,7 +86,7 @@ class TestContinuation:
     def test_invalid_method(self):
         msg = "cheese is not a valid method. Valid methods are: \('ps-arc', 'np'\)"
         with pytest.raises(ValueError, match=msg):
-            continuation(
+            numerical_continuation(
                 eq,
                 variable_kwarg="c",
                 initial_value=0,
@@ -97,7 +97,7 @@ class TestContinuation:
             )
 
     def test_equation_natural(self):
-        sol = continuation(
+        sol = numerical_continuation(
             eq,
             variable_kwarg="c",
             initial_value=-2,
@@ -114,7 +114,7 @@ class TestContinuation:
         assert_allclose(x**3 - x + sol.parameter_values, 0, atol=1e-12)
 
     def test_equation_pseudo_arc_length(self):
-        sol = continuation(
+        sol = numerical_continuation(
             eq,
             variable_kwarg="c",
             initial_value=-2,

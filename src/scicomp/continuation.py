@@ -22,7 +22,7 @@ class ContinuationResult:
 _valid_methods = ["ps-arc", "np"]
 
 
-def continuation(
+def numerical_continuation(
     equation: Callable,
     *,
     variable_kwarg: str,
@@ -31,12 +31,16 @@ def continuation(
     step_size: float,
     max_steps: int,
     fixed_kwargs: Optional[dict] = None,
-    discretisation: Callable = lambda x: x,
+    discretisation: Callable = lambda x, func: x,
     method: str = "ps-arc",
     root_finder_kwargs: Optional[dict] = None,
+    discretisation_kwargs: Optional[dict] = None,
 ) -> ContinuationResult:
     fixed_kwargs = {} if fixed_kwargs is None else fixed_kwargs
     root_finder_kwargs = {} if root_finder_kwargs is None else root_finder_kwargs
+    discretisation_kwargs = (
+        {} if discretisation_kwargs is None else discretisation_kwargs
+    )
 
     if not callable(equation):
         raise ValueError("'equation' must be callable")
@@ -66,7 +70,11 @@ def continuation(
 
     initial_sol = root(
         lambda x: discretisation(
-            equation(x, **{variable_kwarg: initial_value}, **fixed_kwargs)
+            x,
+            equation,
+            **{variable_kwarg: initial_value},
+            **fixed_kwargs,
+            **discretisation_kwargs,
         ),
         x0=[y0],
         **root_finder_kwargs,
@@ -88,9 +96,13 @@ def continuation(
         param = augmented_param[-1][0] + step_size
         sol = root(
             lambda x: discretisation(
-                equation(x, **{variable_kwarg: param}, **fixed_kwargs)
+                x,
+                equation,
+                **{variable_kwarg: param},
+                **fixed_kwargs,
+                **discretisation_kwargs,
             ),
-            x0=[augmented_param[-1][1:]],
+            x0=[y0],
             **root_finder_kwargs,
         )
         if sol.success:
@@ -106,11 +118,15 @@ def continuation(
             sol = root(
                 lambda x: [
                     *discretisation(
-                        equation(x[1:], **{variable_kwarg: x[0]}, **fixed_kwargs)
+                        x[1:],
+                        equation,
+                        **{variable_kwarg: x[0]},
+                        **fixed_kwargs,
+                        **discretisation_kwargs,
                     ),
                     np.dot(secant, x - predicted),
                 ],
-                x0=predicted,
+                x0=[augmented_param[-1]],
                 **root_finder_kwargs,
             )
 
@@ -120,4 +136,4 @@ def continuation(
                 break
 
     augmented_param_array = np.asarray(augmented_param)
-    return ContinuationResult(augmented_param_array[:, 1:], augmented_param_array[:, 0])
+    return ContinuationResult(augmented_param_array[:, 1:].T, augmented_param_array[:, 0])

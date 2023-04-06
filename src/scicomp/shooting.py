@@ -92,10 +92,10 @@ class LimitCycleResult:
 
 def limit_cycle_shooting_func(
     x: np.ndarray,
-    ivp_solver: Callable,
     f: Callable,
     phase_condition: Callable,
-    ivp_solver_kwargs: dict,
+    ivp_solver: Callable = solve_ivp,
+    ivp_solver_kwargs: dict = None,
     **ode_params,
 ) -> npt.ArrayLike:
     """Defines shooting function to fine the zeros of
@@ -118,6 +118,8 @@ def limit_cycle_shooting_func(
     npt.ArrayLike
         Current value of augmented function
     """
+    ivp_solver_kwargs = {} if ivp_solver_kwargs is None else ivp_solver_kwargs
+
     # y(0) - y(T)
     period_condition = (
         x[:-1]
@@ -207,7 +209,7 @@ def find_limit_cycle(
 
     sol = root_finder(
         lambda x: limit_cycle_shooting_func(
-            x, ivp_solver, f, phase_condition, ivp_solver_kwargs, **ode_params
+            x, f, phase_condition, ivp_solver, ivp_solver_kwargs, **ode_params
         ),
         [*y0, T],
         **root_finder_kwargs,
