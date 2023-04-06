@@ -23,7 +23,7 @@ class PhaseCondition(ABC):
     """
 
     @abstractmethod
-    def __call__(self, f: Callable, y0: np.ndarray) -> float:
+    def __call__(self, f: Callable, y0: np.ndarray, **ode_params) -> float:
         """Implements the phase condition.
 
         Parameters
@@ -56,7 +56,7 @@ class ICPhaseCondition(PhaseCondition):
         self.value = value
         self.component = component
 
-    def __call__(self, f: Callable, y0: np.ndarray) -> float:
+    def __call__(self, f: Callable, y0: np.ndarray, **ode_params) -> float:
         return y0[self.component] - self.value
 
 
@@ -71,8 +71,8 @@ class DerivativePhaseCondition(PhaseCondition):
         """
         self.component = component
 
-    def __call__(self, f: Callable, y0: np.ndarray) -> float:
-        return f(0, y0)[self.component]
+    def __call__(self, f: Callable, y0: np.ndarray, **ode_params) -> float:
+        return f(0, y0, **ode_params)[self.component]
 
 
 @dataclass(frozen=True, slots=True)
@@ -88,6 +88,48 @@ class LimitCycleResult:
 
     y0: np.ndarray
     T: float
+
+
+def limit_cycle_shooting_func(
+    x: np.ndarray,
+    ivp_solver: Callable,
+    f: Callable,
+    phase_condition: Callable,
+    ivp_solver_kwargs: dict,
+    **ode_params,
+) -> npt.ArrayLike:
+    """Defines shooting function to fine the zeros of
+
+    Parameters
+    ----------
+    x : np.ndarray
+        Current augmented solution vector
+    ivp_solver : Callable
+        Solver to integrate the ODE
+    f : Callable
+        ODE to find limit cycle of
+    phase_condition : Callable
+        Phase condition to isolate limit cycle
+    ivp_solver_kwargs : dict
+        Options to pass to the ODE solver
+
+    Returns
+    -------
+    npt.ArrayLike
+        Current value of augmented function
+    """
+    # y(0) - y(T)
+    period_condition = (
+        x[:-1]
+        - ivp_solver(
+            f,
+            t_span=(0, x[-1]),
+            y0=x[:-1],
+            **ivp_solver_kwargs,  # type:ignore
+            ode_params=ode_params,
+        ).y[:, -1]
+    )
+    return [*period_condition, phase_condition(f, x[:-1], **ode_params)]
 
 
 def find_limit_cycle(
@@ -155,33 +197,21 @@ def find_limit_cycle(
     T=30, phase_condition=pc, ivp_solver_kwargs=solver_args, ode_params=ode_params)
     LimitCycleResult(y0=array([0.81897015, 0.16636103]), T=34.066559310372)
     """
-    ode_params = {} if ode_params is None else ode_params
-
-    def f_wrapped(t, y):
-        return np.asarray(f(t, y, **ode_params))
-
     if T <= 0:
         raise ValueError("Initial guess of period 'T' must be positive")
 
     y0 = np.asarray(y0)
     ivp_solver_kwargs = dict() if ivp_solver_kwargs is None else ivp_solver_kwargs
     root_finder_kwargs = dict() if root_finder_kwargs is None else root_finder_kwargs
+    ode_params = {} if ode_params is None else ode_params
 
-    def G(x: np.ndarray) -> npt.ArrayLike:
-        """Defines shooting function to fine the zeros of"""
-        # y(0) - y(T)
-        period_condition = (
-            x[:-1]
-            - ivp_solver(
-                f_wrapped,
-                t_span=(0, x[-1]),
-                y0=x[:-1],
-                **ivp_solver_kwargs,  # type:ignore
-            ).y[:, -1]
-        )
-        return [*period_condition, phase_condition(f_wrapped, x[:-1])]
-
-    sol = root_finder(G, [*y0, T], **root_finder_kwargs)
+    sol = root_finder(
+        lambda x: limit_cycle_shooting_func(
+            x, ivp_solver, f, phase_condition, ivp_solver_kwargs, **ode_params
+        ),
+        [*y0, T],
+        **root_finder_kwargs,
+    )
 
     if not sol.success:
         raise LimitCycleNotFound("No limit cycle found; potential bad initial guess.")
