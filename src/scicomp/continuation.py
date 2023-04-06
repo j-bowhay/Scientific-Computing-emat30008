@@ -79,7 +79,8 @@ def continuation(
     if method == "np":
         steps = max_steps
     elif method == "ps-arc":
-        # need to do an iteration of natural parameter continuation to find initial secant
+        # need to do an iteration of natural parameter continuation
+        # to find initial secant
         steps = 1
 
     # natural parameter continuation

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from abc import ABC
+from abc import ABC, abstractmethod
 
 import numpy as np
 import scipy
@@ -106,7 +106,8 @@ class Grid:
 
     @property
     def N_inner(self) -> int:
-        """Returns the number of grid points required for the computation based on the BCs
+        """Returns the number of grid points required for the computation based
+        on the BCs
 
         Returns
         -------
@@ -133,7 +134,9 @@ class Grid:
 
 
 class BoundaryCondition(ABC):
-    ...
+    @abstractmethod
+    def __init__(self) -> None:
+        ...
 
 
 class DirichletBC(BoundaryCondition):
@@ -202,7 +205,8 @@ def get_A_mat_from_BCs(derivative: int, grid: Grid) -> np.ndarray:
     if isinstance(left_BC, DirichletBC) and isinstance(right_BC, DirichletBC):
         return A
 
-    # Changes to the finite difference matrix are required based on the boundary conditions
+    # Changes to the finite difference matrix are required based on the
+    # boundary conditions
     if isinstance(left_BC, RobinBC):
         A[0, 0] += 2 * left_BC.gamma * grid.dx
         A[0, 1] += 1
