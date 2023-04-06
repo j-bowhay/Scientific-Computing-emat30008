@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-from typing import Callable, Optional
 from dataclasses import dataclass
+from typing import Callable, Optional
 
 import numpy as np
 import scipy
 
 from scicomp.finite_diff import (
     Grid,
+    apply_BCs_to_soln,
     get_A_mat_from_BCs,
     get_b_vec_from_BCs,
-    apply_BCs_to_soln,
 )
 
 

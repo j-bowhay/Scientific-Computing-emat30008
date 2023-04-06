@@ -97,7 +97,7 @@ class _RungeKuttaStep(ABC):
         self.s = self.B.size
 
     def __call__(self, f: Callable, t: float, y: np.ndarray, h: float) -> _StepResult:
-        """Computes one step of the ode ``y' = f(t,y)``.
+        r"""Computes one step of the ode ``y' = f(t,y)``.
 
         Based on the following equation,
 
@@ -557,7 +557,7 @@ def _solve_to_adaptive(
             # adjust step size
             # eq 4.13 Hairer
             if err == 0:
-                h_new = h*fac_max
+                h_new = h * fac_max
             else:
                 h_new = h * min(
                     fac_max,
@@ -678,22 +678,22 @@ def solve_ivp(
     *,
     y0: npt.ArrayLike,
     t_span: tuple[float, float],
-    method: str,
+    method: str = "rkf45",
+    mode: str = "adaptive",
     h: Optional[float] = None,
-    r_tol: float = 0.0,
-    a_tol: float = 0.0,
+    r_tol: float = 1e-3,
+    a_tol: float = 1e-6,
     max_step: float = np.inf,
 ) -> ODEResult:
     """Solves the IVP from a system of ODEs
 
     Has three primary modes of execution, see examples for further details.
-    1. Solve the ODE using a fixed timestep. This is used if `h` is proved and `r_tol`
-    and `a_tol` are 0.
+    1. Solve the ODE using a fixed timestep. This is used if ``mode=="fixed"``.
     2. Solve the ODE using a adaptive timestep using Richardson Extrapolation as the
-    error estimate. This is used if `r_tol` or `a_tol` are set and `method` does not
+    error estimate. This is used if ``mode=="adaptive"`` and `method` does not
     have an embedded error estimate.
     3. Solve the ODE using a adaptive timestep using an embedded error estimate. This
-    is used if `r_tol` or `a_tol` are set and `method` does have an embedded error
+    is used if ``mode=="adaptive"`` and `method` does have an embedded error
     estimate.
 
     `h` is optional if operating as in modes (2) or (3) as a suitable initial step
@@ -733,14 +733,14 @@ def solve_ivp(
         -``"rk38"``: Fourth order Runge-Kutta 3/8-rule
         -``"ralston4"``: Ralston's fourth-order method
     h : Optional[float], optional
-        Step size. If `r_tol` and `a_tol` are left as default then this is used as a
+        Step size. If `mode=="fixed"`` then this is used as a
         fixed step size for the integration scheme. Otherwise this is the initial step
         size used in the adaptive integration scheme.
     r_tol : float, optional
-        Relative error tolerance, by default 0.0. Adaptive solver keeps the local error
+        Relative error tolerance, by default 1e-3. Adaptive solver keeps the local error
         bellow this tolerance.
     a_tol : float, optional
-        Absolute error tolerance, by default 0.0. Adaptive solver keeps the local error
+        Absolute error tolerance, by default 1e-6. Adaptive solver keeps the local error
         bellow this tolerance.
     max_step : float, optional
         Maximum allowable step size, by default np.inf
@@ -768,15 +768,16 @@ def solve_ivp(
 
     Solving using a fixed timestep.
 
-    >>> solve_ivp(rhs, y0=y0, t_span=t_span, method="rk4", h=1e-2)
+    >>> solve_ivp(rhs, y0=y0, t_span=t_span, method="rk4", mode="fixed, h=1e-2)
     ODEResult(y=array([[ 0.5       ,  0.50497492,  0.50989934, ..., -0.69003652,
             -0.69154632, -0.69154632],
            [ 0.5       ,  0.49497508,  0.48990067, ..., -0.15443318,
             -0.14752521, -0.14752521]]), t=array([ 0.  ,  0.01,  0.02, ...,  9.99, 10.  , 10.  ]))
 
     Solve using an adaptive timestep with Richardson Extrapolation as the error estimate
+    with an initial timestep provided
 
-    >>> solve_ivp(rhs, y0=y0, t_span=t_span, method="rk4", h=1e-2, r_tol=1e-3)
+    >>> solve_ivp(rhs, y0=y0, t_span=t_span, method="rk4", h=1e-2)
     ODEResult(y=array([[ 0.5       ,  0.50497492,  0.51234246,  0.52317711,  0.53893083,
              0.56140509,  0.59240227,  0.63244547,  0.67700782,  0.70663495,
              0.66474459,  0.42583101, -0.1532335 , -0.66590121, -0.51947298,
@@ -795,7 +796,7 @@ def solve_ivp(
     Solve using an adaptive timestep with Richardson Extrapolation as the error estimate
     with no initial timestep provided
 
-    >>> solve_ivp(rhs, y0=y0, t_span=t_span, method="rk4", r_tol=1e-3)
+    >>> solve_ivp(rhs, y0=y0, t_span=t_span, method="rk4")
     ODEResult(y=array([[ 0.5       ,  0.69081285,  0.21648852, -0.49580923, -0.68732638,
             -0.20301247,  0.50573613,  0.68248609,  0.18936009, -0.51541622,
             -0.68893827],
@@ -807,7 +808,7 @@ def solve_ivp(
 
     Solve using adaptive timestep using an embedded error estimate and no initial timestep
 
-    >>> solve_ivp(rhs, y0=y0, t_span=t_span, method="rkf45", r_tol=1e-3)
+    >>> solve_ivp(rhs, y0=y0, t_span=t_span, method="rkf45")
         ODEResult(y=array([[ 0.5       ,  0.70345933,  0.39396531, -0.18910256, -0.63384444,
                 -0.65128745, -0.25118104,  0.34182193,  0.6847462 ,  0.58109135,
                  0.09805386, -0.47581897, -0.69332318],
@@ -828,7 +829,7 @@ def solve_ivp(
     if len(t_span) != 2 or t_span[0] > t_span[1]:
         raise ValueError("Invalid values for 't_span'")
 
-    if h is None and r_tol == 0 and a_tol == 0:
+    if h is None and mode == "fixed":
         # If running in fixed step mode the user must provide the step size
         raise ValueError("Step size must be provided if running in fixed step mode")
 
@@ -850,29 +851,23 @@ def solve_ivp(
     else:
         raise ValueError(f"{method} is not a valid option for 'method'")
 
+    if mode not in ["adaptive", "fixed"]:
+        raise ValueError(f"{mode} is not a valid option for 'mode'")
+
     if h is None:
         # compute initial step size
         h = _estimate_initial_step_size(
             f_wrapper, y0, t_span[0], method_step, r_tol, a_tol, max_step
         )
 
-    if method in _fixed_step_methods:
-        if r_tol == 0 and a_tol == 0:
-            # run in fixed mode
-            res = _solve_to_fixed_step(f_wrapper, y0, t_span, h, method_step)
+    if mode == "fixed":
+        # run in fixed mode
+        res = _solve_to_fixed_step(f_wrapper, y0, t_span, h, method_step)
+    else:
+        if method in _fixed_step_methods:
+            err_estimate = _richardson_error_estimate
         else:
-            res = _solve_to_adaptive(
-                f_wrapper,
-                y0,
-                t_span,
-                h,
-                method_step,
-                r_tol,
-                a_tol,
-                max_step,
-                _richardson_error_estimate,
-            )
-    elif method in _embedded_methods:
+            err_estimate = _embedded_error_estimate
         res = _solve_to_adaptive(
             f_wrapper,
             y0,
@@ -882,6 +877,6 @@ def solve_ivp(
             r_tol,
             a_tol,
             max_step,
-            _embedded_error_estimate,
+            err_estimate,
         )
     return res

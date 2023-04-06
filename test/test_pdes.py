@@ -1,9 +1,8 @@
 import numpy as np
-from numpy.testing import assert_allclose
 import pytest
-
+from numpy.testing import assert_allclose
+from scicomp.finite_diff import DirichletBC, Grid
 from scicomp.pdes import solve_diffusion_implicit, solve_diffusion_method_lines
-from scicomp.finite_diff import Grid, DirichletBC
 
 
 class TestSolveLinearDiffusionImplicit:
@@ -13,7 +12,7 @@ class TestSolveLinearDiffusionImplicit:
 
         msg = "Invalid 'dt'"
         with pytest.raises(ValueError, match=msg):
-            u = solve_diffusion_implicit(
+            solve_diffusion_implicit(
                 grid=grid,
                 D=0.1,
                 dt=-0.01,
@@ -27,7 +26,7 @@ class TestSolveLinearDiffusionImplicit:
 
         msg = "Invalid 'steps'"
         with pytest.raises(ValueError, match=msg):
-            u = solve_diffusion_implicit(
+            solve_diffusion_implicit(
                 grid=grid,
                 D=0.1,
                 dt=0.01,
@@ -59,7 +58,9 @@ class TestSolveDiffusionMethodLines:
         left_BC = right_BC = DirichletBC(0)
         grid = Grid(a, b, 30, left_BC, right_BC)
 
-        sol = solve_diffusion_method_lines(grid, D, lambda x: np.sin(np.pi * x), t_span=(0, 0.1))
+        sol = solve_diffusion_method_lines(
+            grid, D, lambda x: np.sin(np.pi * x), t_span=(0, 0.1)
+        )
 
-        expected = np.exp(-D*np.pi**2 * sol.t[-1]) * np.sin(np.pi * grid.x)
+        expected = np.exp(-D * np.pi**2 * sol.t[-1]) * np.sin(np.pi * grid.x)
         assert_allclose(sol.u[-1, :], expected, atol=1e-3)
