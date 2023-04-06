@@ -556,10 +556,13 @@ def _solve_to_adaptive(
 
             # adjust step size
             # eq 4.13 Hairer
-            h_new = h * min(
-                fac_max,
-                max(fac_min, safety_fac * (1 / err) ** (1 / (method.order + 1))),
-            )
+            if err == 0:
+                h_new = h*fac_max
+            else:
+                h_new = h * min(
+                    fac_max,
+                    max(fac_min, safety_fac * (1 / err) ** (1 / (method.order + 1))),
+                )
             h_new = max_step if h_new > max_step else h_new
 
             # accept the step
@@ -640,10 +643,9 @@ def _estimate_initial_step_size(
         Estimate for the initial step size to use
     """
     # step a
-    scale = _scale(r_tol, a_tol, y0)
-    d0 = _error_norm(y0 / scale)
     f0 = f(t0, y0)
-    scale = _scale(r_tol, a_tol, f0)
+    scale = _scale(r_tol, a_tol, f0, y0)
+    d0 = _error_norm(y0 / scale)
     d1 = _error_norm(f0 / scale)
 
     # step b

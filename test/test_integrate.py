@@ -86,7 +86,7 @@ class TestSolveOde:
     @ALL_METHODS
     def test_zero_adaptive(self, method):
         res = integrate.solve_ivp(
-            zero_ode, y0=np.ones(10), t_span=[0, 5], method=method, r_tol=1e-3
+            zero_ode, y0=np.ones(10), t_span=[0, 5], method=method, r_tol=1e-3, a_tol=1e-3
         )
         assert np.array_equal(res.y, np.ones((10, res.t.size)))
 
