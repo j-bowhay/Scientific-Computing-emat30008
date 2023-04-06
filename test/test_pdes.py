@@ -2,11 +2,11 @@ import numpy as np
 from numpy.testing import assert_allclose
 import pytest
 
-from scicomp.pdes import solve_diffusion_implicit
+from scicomp.pdes import solve_diffusion_implicit, solve_diffusion_method_lines
 from scicomp.finite_diff import Grid, DirichletBC
 
 
-class TestSolveLinearDiffusionCrankNicolson:
+class TestSolveLinearDiffusionImplicit:
     def test_invalid_dt(self):
         left_BC = right_BC = DirichletBC(0)
         grid = Grid(0, 1, 100, left_BC=left_BC, right_BC=right_BC)
@@ -49,3 +49,17 @@ class TestSolveLinearDiffusionCrankNicolson:
         )
 
         assert_allclose(u[-1, 50], np.exp(-0.2 * np.pi**2), atol=1e-4)
+
+
+class TestSolveDiffusionMethodLines:
+    def test_sol_dirichlet(self):
+        D = 1
+        a = 0
+        b = 1
+        left_BC = right_BC = DirichletBC(0)
+        grid = Grid(a, b, 30, left_BC, right_BC)
+
+        sol = solve_diffusion_method_lines(grid, D, lambda x: np.sin(np.pi * x), t_span=(0, 0.1))
+
+        expected = np.exp(-D*np.pi**2 * sol.t[-1]) * np.sin(np.pi * grid.x)
+        assert_allclose(sol.u[-1, :], expected, atol=1e-3)
