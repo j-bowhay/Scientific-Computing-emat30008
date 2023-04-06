@@ -100,6 +100,7 @@ def find_limit_cycle(
     root_finder: Callable = root,
     ivp_solver_kwargs: Optional[dict] = None,
     root_finder_kwargs: Optional[dict] = None,
+    ode_params: Optional[dict] = None,
 ) -> LimitCycleResult:
     """Finds a limit cycle in the given ODE using numerical shooting.
 
@@ -121,6 +122,9 @@ def find_limit_cycle(
         Keyword arguments to parse to the IVP solver, by default None
     root_finder_kwargs : Optional[dict], optional
         Keyword arguments to parse to the root finder, by default None
+    ode_params: dict, optional
+        Keyword arguments to be passed to `f`
+
 
     Returns
     -------
@@ -144,15 +148,18 @@ def find_limit_cycle(
 
     >>> from scicomp.odes import predator_prey
     >>> from scicomp.shooting import find_limit_cycle, DerivativePhaseCondition
-    >>> a = 1
-    >>> d = 0.1
-    >>> b = 0.1
+    >>> params = {"a": 1, "d": 0.1, "b": 0.1}
     >>> pc = DerivativePhaseCondition(0)
     >>> solver_args = {"method": "rkf45", "r_tol": 1e-5}
     >>> find_limit_cycle(lambda t, y: predator_prey(t, y, a, b, d), y0=[0.8, 0.2],
-    T=30, phase_condition=pc, ivp_solver_kwargs=solver_args)
+    T=30, phase_condition=pc, ivp_solver_kwargs=solver_args, ode_params=ode_params)
     LimitCycleResult(y0=array([0.81897015, 0.16636103]), T=34.066559310372)
     """
+    ode_params = {} if ode_params is None else ode_params
+
+    def f_wrapped(t, y):
+        return np.asarray(f(t, y, **ode_params))
+
     if T <= 0:
         raise ValueError("Initial guess of period 'T' must be positive")
 
@@ -166,10 +173,13 @@ def find_limit_cycle(
         period_condition = (
             x[:-1]
             - ivp_solver(
-                f, t_span=(0, x[-1]), y0=x[:-1], **ivp_solver_kwargs  # type:ignore
+                f_wrapped,
+                t_span=(0, x[-1]),
+                y0=x[:-1],
+                **ivp_solver_kwargs,  # type:ignore
             ).y[:, -1]
         )
-        return [*period_condition, phase_condition(f, x[:-1])]
+        return [*period_condition, phase_condition(f_wrapped, x[:-1])]
 
     sol = root_finder(G, [*y0, T], **root_finder_kwargs)
 
