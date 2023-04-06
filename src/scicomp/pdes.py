@@ -6,13 +6,13 @@ from typing import Callable, Optional
 import numpy as np
 import scipy
 
-from scicomp.integrate import solve_ivp
 from scicomp.finite_diff import (
     Grid,
     apply_BCs_to_soln,
     get_A_mat_from_BCs,
     get_b_vec_from_BCs,
 )
+from scicomp.integrate import solve_ivp
 
 
 @dataclass

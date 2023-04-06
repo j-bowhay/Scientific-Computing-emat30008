@@ -16,7 +16,7 @@ class TestSolveOde:
             integrate.solve_ivp("ode", y0=[0], t_span=[0, 1], method="rk4", h=0.1)
         with pytest.raises(ValueError, match="'f' has an invalid signature"):
             integrate.solve_ivp(
-                lambda t, y, z: y, y0=[0], t_span=[0, 1], method="rk4", h=0.1
+                lambda o, y, z: y, y0=[0], t_span=[0, 1], method="rk4", h=0.1
             )
 
     def test_invalid_method(self):
@@ -115,12 +115,13 @@ class TestSolveOde:
     def test_t_span_obeyed_adaptive(self):
         t_span = (2, 5.432)
         res = integrate.solve_ivp(
-            lambda t, y: shm_ode(t, y, 1),
+            shm_ode,
             y0=[1, 0],
             t_span=t_span,
             method="rkf45",
             h=1e-1,
             r_tol=1e-2,
+            ode_params={"omega": 1},
         )
         np.testing.assert_allclose(t_span, (res.t[0], res.t[-1]))
 
@@ -134,22 +135,24 @@ class TestSolveOde:
     @ALL_METHODS
     def test_fixed_step_shm(self, method):
         res = integrate.solve_ivp(
-            lambda t, y: shm_ode(t, y, 1),
+            shm_ode,
             y0=[1, 0],
             t_span=(0, 0.1),
             method=method,
             mode="fixed",
             h=1e-6,
+            ode_params={"omega": 1},
         )
         np.testing.assert_allclose(res.y[:, -1], [np.cos(0.1), -np.sin(0.1)], rtol=1e-6)
 
     @FIXED_STEP_METHODS
     def test_richardson_adaptive_shm(self, method):
         res = integrate.solve_ivp(
-            lambda t, y: shm_ode(t, y, 1),
+            shm_ode,
             y0=[1, 0.5],
             t_span=(0, 0.5),
             method=method,
+            ode_params={"omega": 1},
         )
         if method == "euler":
             tol = 1e-2
@@ -164,10 +167,11 @@ class TestSolveOde:
     @EMBEDDED_METHODS
     def test_adaptive_shm(self, method):
         res = integrate.solve_ivp(
-            lambda t, y: shm_ode(t, y, 1),
+            shm_ode,
             y0=[1, 0.5],
             t_span=(0, 0.5),
             method=method,
+            ode_params={"omega": 1},
         )
         np.testing.assert_allclose(
             res.y[:, -1],

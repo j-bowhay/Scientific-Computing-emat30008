@@ -684,6 +684,7 @@ def solve_ivp(
     r_tol: float = 1e-3,
     a_tol: float = 1e-6,
     max_step: float = np.inf,
+    ode_params: Optional[dict] = None,
 ) -> ODEResult:
     """Solves the IVP from a system of ODEs
 
@@ -748,6 +749,8 @@ def solve_ivp(
         bellow this tolerance.
     max_step : float, optional
         Maximum allowable step size, by default np.inf
+    ode_params: dict, optional
+        Keyword arguments to be passed to `f`
 
     Returns
     -------
@@ -765,14 +768,13 @@ def solve_ivp(
 
     >>> from scicomp.integrate import shm_ode
     >>> from scicomp.integrate import solve_ivp
-    >>> def rhs(t,y):
-    ...     return shm_ode(t, y, 1)
     >>> t_span = (0, 10)
     >>> y0 = [0.5, 0.5]
 
     Solving using a fixed timestep.
 
-    >>> solve_ivp(rhs, y0=y0, t_span=t_span, method="rk4", mode="fixed, h=1e-2)
+    >>> solve_ivp(shm_ode, y0=y0, t_span=t_span, method="rk4", mode="fixed, h=1e-2,
+                  ode_params={"omega": 1})
     ODEResult(y=array([[ 0.5       ,  0.50497492,  0.50989934, ..., -0.69003652,
             -0.69154632, -0.69154632],
            [ 0.5       ,  0.49497508,  0.48990067, ..., -0.15443318,
@@ -781,7 +783,8 @@ def solve_ivp(
     Solve using an adaptive timestep with Richardson Extrapolation as the error estimate
     with an initial timestep provided
 
-    >>> solve_ivp(rhs, y0=y0, t_span=t_span, method="rk4", h=1e-2)
+    >>> solve_ivp(shm_ode, y0=y0, t_span=t_span, method="rk4", h=1e-2
+                  ode_params={"omega": 1})
     ODEResult(y=array([[ 0.5       ,  0.50497492,  0.51234246,  0.52317711,  0.53893083,
              0.56140509,  0.59240227,  0.63244547,  0.67700782,  0.70663495,
              0.66474459,  0.42583101, -0.1532335 , -0.66590121, -0.51947298,
@@ -800,7 +803,7 @@ def solve_ivp(
     Solve using an adaptive timestep with Richardson Extrapolation as the error estimate
     with no initial timestep provided
 
-    >>> solve_ivp(rhs, y0=y0, t_span=t_span, method="rk4")
+    >>> solve_ivp(shm_ode, y0=y0, t_span=t_span, method="rk4", ode_params={"omega": 1})
     ODEResult(y=array([[ 0.5       ,  0.69081285,  0.21648852, -0.49580923, -0.68732638,
             -0.20301247,  0.50573613,  0.68248609,  0.18936009, -0.51541622,
             -0.68893827],
@@ -812,7 +815,7 @@ def solve_ivp(
 
     Solve using adaptive timestep using an embedded error estimate and no initial timestep
 
-    >>> solve_ivp(rhs, y0=y0, t_span=t_span, method="rkf45")
+    >>> solve_ivp(rhs, y0=y0, t_span=t_span, method="rkf45", ode_params={"omega": 1})
         ODEResult(y=array([[ 0.5       ,  0.70345933,  0.39396531, -0.18910256, -0.63384444,
                 -0.65128745, -0.25118104,  0.34182193,  0.6847462 ,  0.58109135,
                  0.09805386, -0.47581897, -0.69332318],
@@ -822,12 +825,14 @@ def solve_ivp(
                  4.3317307 ,  5.13663241,  6.00282512,  6.80978582,  7.68042683,
                  8.50280141,  9.37716803, 10.        ]))
     """  # noqa: E501
+    ode_params = {} if ode_params is None else ode_params
+
     if not callable(f):
         raise ValueError("'f' must be callable")
     else:
-        f_sig = inspect.signature(f)
+        f_sig = list(inspect.signature(f).parameters)
 
-        if list(f_sig.parameters) != ["t", "y"]:
+        if len(f_sig) < 2 or f_sig[:2] != ["t", "y"]:
             raise ValueError("'f' has an invalid signature")
 
     if len(t_span) != 2 or t_span[0] > t_span[1]:
@@ -848,7 +853,7 @@ def solve_ivp(
 
     # wrap the function given by the user so we know it returns an array
     def f_wrapper(t, y):
-        return np.asarray(f(t, y))
+        return np.asarray(f(t, y, **ode_params))
 
     if method in _all_methods.keys():
         method_step = _all_methods[method]()  # type: ignore
