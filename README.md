@@ -17,7 +17,7 @@ For an editable devlopment install run:
 ```bash
 git clone git@github.com:j-bowhay/Scientific-Computing-emat30008.git
 cd Scientific-Computing-emat30008
-pip install ".[dev]"
+pip install -e ".[dev]"
 ```
 
 ## Submodule Overview
