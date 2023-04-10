@@ -30,6 +30,7 @@ def _scale(r_tol: float, a_tol: float, *args) -> np.ndarray:
         Array containing the scale term for each component of the solution.
     """
     if len(args) > 1:
+        # Take maximum of input args to avoid near division by zero later on
         y = np.maximum(*tuple(map(np.abs, args)))
     else:
         y = np.abs(args[0])
