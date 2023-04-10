@@ -46,18 +46,7 @@ class TestContinuation:
                 fixed_kwargs={"b": 10},
             )
 
-    def test_invalid_step_size(self):
-        msg = "'step_size' must be positive"
-        with pytest.raises(ValueError, match=msg):
-            numerical_continuation(
-                eq,
-                variable_kwarg="c",
-                initial_value=0,
-                y0=0,
-                step_size=-0.1,
-                max_steps=100,
-            )
-
+    
     def test_invalid_max_steps(self):
         msg = "'max_steps' must be positive"
         with pytest.raises(ValueError, match=msg):

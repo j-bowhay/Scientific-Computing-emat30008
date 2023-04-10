@@ -54,9 +54,6 @@ def numerical_continuation(
         elif len(fixed_kwargs) > 0 and not set(fixed_kwargs.keys()) <= equation_sig:
             raise ValueError("'fixed_kwargs' are not valid inputs to 'equation'")
 
-    if step_size <= 0:
-        raise ValueError("'step_size' must be positive")
-
     if max_steps <= 0:
         raise ValueError("'max_steps' must be positive")
 
