@@ -46,7 +46,6 @@ class TestContinuation:
                 fixed_kwargs={"b": 10},
             )
 
-    
     def test_invalid_max_steps(self):
         msg = "'max_steps' must be positive"
         with pytest.raises(ValueError, match=msg):
