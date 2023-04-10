@@ -33,6 +33,7 @@ def get_central_diff_matrix(
 
     weights = _central_diff_weights(points, derivative)
 
+    # use central diff weights to create a finite difference matrix
     k = int(0.5 * (points - 1))
     offsets = list(range(-k, k + 1))
     diags = [weights[i] * np.ones(n - abs(offset)) for i, offset in enumerate(offsets)]
@@ -138,6 +139,7 @@ class Grid:
 class BoundaryCondition(ABC):
     @abstractmethod
     def __init__(self) -> None:
+        """Abstract class for representing a Boundary Condition"""
         ...
 
 
@@ -225,6 +227,18 @@ def get_A_mat_from_BCs(derivative: int, grid: Grid) -> np.ndarray:
 
 
 def get_b_vec_from_BCs(grid: Grid) -> np.ndarray:
+    """Get boundary condition vector based on `grid`.
+
+    Parameters
+    ----------
+    grid : Grid
+        The object to get boundary conditions from.
+
+    Returns
+    -------
+    np.ndarray
+        Boundary condition vector
+    """
     left_BC = grid.left_BC
     right_BC = grid.right_BC
 
@@ -242,6 +256,7 @@ def get_b_vec_from_BCs(grid: Grid) -> np.ndarray:
     ):
         b = np.zeros_like(grid.x)
 
+    # Value of b depends on the boundary conditions
     if isinstance(left_BC, DirichletBC):
         b[0] = left_BC.gamma
     elif isinstance(left_BC, (NeumannBC, RobinBC)):
@@ -260,6 +275,20 @@ def get_b_vec_from_BCs(grid: Grid) -> np.ndarray:
 
 
 def apply_BCs_to_soln(inner_sol: np.ndarray, grid: Grid) -> np.ndarray:
+    """Applies the value of Dirichlet Boundary conditions to a solution
+
+    Parameters
+    ----------
+    inner_sol : np.ndarray
+        Solution for inner grid points
+    grid : Grid
+        Grid object containing boundary conditions
+
+    Returns
+    -------
+    np.ndarray
+        Complete solution including boundary conditions
+    """
     left_BC = grid.left_BC
     right_BC = grid.right_BC
     inner_sol = np.atleast_2d(inner_sol)

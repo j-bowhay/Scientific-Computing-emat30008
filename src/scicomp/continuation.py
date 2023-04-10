@@ -16,13 +16,14 @@ class ContinuationError(Exception):
 @dataclass
 class ContinuationResult:
     """Results object containing output of numerical continuation.
-    
+
     Has the following attributes:
         state_value : np.ndarray
             Value of the state vector at each corresponding value of `parameter_values`
         parameter_values : np.ndarray
             Value of the parameter that was varied.
     """
+
     state_values: np.ndarray
     parameter_values: np.ndarray
 
