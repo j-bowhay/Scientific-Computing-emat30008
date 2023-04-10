@@ -2,6 +2,8 @@ import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 from scicomp.continuation import numerical_continuation
+from scicomp.odes import modified_hopf
+from scicomp.shooting import DerivativePhaseCondition, limit_cycle_shooting_func
 
 
 def eq(x, c):
@@ -118,3 +120,43 @@ class TestContinuation:
         assert sol.parameter_values[-1] > 30
         x = np.squeeze(sol.state_values)
         assert_allclose(x**3 - x + sol.parameter_values, 0, atol=1e-12)
+
+    def test_ode_limit_cycle_continuation_pseudo_arc(self):
+        res = numerical_continuation(
+            equation=modified_hopf,
+            variable_kwarg="beta",
+            initial_value=2,
+            y0=[1, 1, 6],
+            step_size=-0.1,
+            max_steps=50,
+            discretisation=limit_cycle_shooting_func,
+            discretisation_kwargs={
+                "phase_condition": DerivativePhaseCondition(0),
+                "ivp_solver_kwargs": {"r_tol": 1e-6},
+            },
+        )
+
+        assert res.parameter_values.shape[0] == 50
+        assert res.parameter_values[0] == 2
+        assert res.parameter_values[22] < 0
+        assert res.parameter_values[-1] > 2
+
+    def test_ode_limit_cycle_continuation_natural_parameter(self):
+        res = numerical_continuation(
+            equation=modified_hopf,
+            variable_kwarg="beta",
+            initial_value=2,
+            y0=[1, 1, 6],
+            step_size=-0.1,
+            max_steps=50,
+            discretisation=limit_cycle_shooting_func,
+            discretisation_kwargs={
+                "phase_condition": DerivativePhaseCondition(0),
+                "ivp_solver_kwargs": {"r_tol": 1e-6},
+            },
+            method="np",
+        )
+
+        assert res.parameter_values.shape[0] == 23
+        assert res.parameter_values[0] == 2
+        assert res.parameter_values[-1] < 0

@@ -82,7 +82,7 @@ def numerical_continuation(
         raise ContinuationError("Bad initial guess; failed to converge")
 
     if method == "np":
-        steps = max_steps
+        steps = max_steps - 1
     elif method == "ps-arc":
         # need to do an iteration of natural parameter continuation
         # to find initial secant
@@ -108,7 +108,7 @@ def numerical_continuation(
             break
 
     if method == "ps-arc":
-        for _ in range(max_steps):
+        for _ in range(max_steps - 2):
             secant = augmented_param[-1] - augmented_param[-2]
             predicted = augmented_param[-1] + secant
 
