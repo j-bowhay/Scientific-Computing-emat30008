@@ -1,10 +1,8 @@
-from scicomp.odes import hopf_normal, modified_hopf
-from scicomp.continuation import numerical_continuation
-from scicomp.shooting import limit_cycle_shooting_func, DerivativePhaseCondition
-from scicomp.integrate import solve_ivp
 import matplotlib.pyplot as plt
-
-import scipy
+from scicomp.continuation import numerical_continuation
+from scicomp.integrate import solve_ivp
+from scicomp.odes import modified_hopf
+from scicomp.shooting import DerivativePhaseCondition, limit_cycle_shooting_func
 
 res = solve_ivp(
     modified_hopf,
