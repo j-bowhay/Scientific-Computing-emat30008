@@ -136,4 +136,6 @@ def numerical_continuation(
                 break
 
     augmented_param_array = np.asarray(augmented_param)
-    return ContinuationResult(augmented_param_array[:, 1:].T, augmented_param_array[:, 0])
+    return ContinuationResult(
+        augmented_param_array[:, 1:].T, augmented_param_array[:, 0]
+    )

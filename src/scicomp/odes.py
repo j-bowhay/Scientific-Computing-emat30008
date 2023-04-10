@@ -166,3 +166,39 @@ def predator_prey(
         y[0] * (1 - y[0]) - (a * y[0] * y[1]) / (d + y[0]),
         b * y[1] * (1 - y[1] / y[0]),
     ]
+
+
+def modified_hopf(t, y, beta):
+    r"""Ode for the modified hopf normal form
+
+    .. math::
+
+        \begin{align}
+        \diff{u_1}{t} &= \beta u_1 - u_2 + u_1\left(u_1^2 + u_2^2\right) - u_1\left(u_1^2 + u_2^2\right)^2,\\
+        \diff{u_2}{t} &= u_1 + \beta u_2 + u_2\left(u_1^2 + u_2^2\right) - u_2\left(u_1^2 + u_2^2\right)^2,
+        \end{align}
+
+    Parameters
+    ----------
+    t : float
+        Time
+    y : np.ndarray
+        Current state
+    beta : float
+        magnitude parameter
+
+    Returns
+    -------
+    npt.ArrayLike
+        RHS of the ODE
+    """
+    return [
+        beta * y[0]
+        - y[1]
+        + y[0] * (y[0] ** 2 + y[1] ** 2)
+        - y[0] * (y[0] ** 2 + y[1] ** 2) ** 2,
+        y[0]
+        + beta * y[1]
+        + y[1] * (y[0] ** 2 + y[1] ** 2)
+        - y[1] * (y[0] ** 2 + y[1] ** 2) ** 2,
+    ]
