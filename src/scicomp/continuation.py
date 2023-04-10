@@ -31,7 +31,7 @@ def numerical_continuation(
     step_size: float,
     max_steps: int,
     fixed_kwargs: Optional[dict] = None,
-    discretisation: Callable = lambda x, func: x,
+    discretisation: Callable = lambda x, func, **kwargs: func(x, **kwargs),
     method: str = "ps-arc",
     root_finder_kwargs: Optional[dict] = None,
     discretisation_kwargs: Optional[dict] = None,
