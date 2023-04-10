@@ -12,7 +12,7 @@ Jake Bowhay: up19056
 pip install git+https://github.com/j-bowhay/Scientific-Computing-emat30008@main
 ```
 
-For an editable devlopment install run:
+For an editable development install run:
 
 ```bash
 git clone git@github.com:j-bowhay/Scientific-Computing-emat30008.git
@@ -22,6 +22,20 @@ pip install -e ".[dev]"
 
 ## Submodule Overview
 
+### `bvps`
+
+Collection of convenience functions for solving common boundary value problems (BVPs).
+
+### `continuation`
+
+Numerical continuation methods for tracking the roots of algebraic equations, steady states
+of dynamical systems and limit cycles as a parameter is varied.
+
+### `finite_diff`
+
+Collection of functions for finite difference approximations. Includes finites difference matrices
+and boundary condition discretisations.
+
 ### `integrate`
 
 Solving initial value problems.
@@ -29,6 +43,10 @@ Solving initial value problems.
 ### `odes`
 
 Provides right hand side functions for a collection of common ODEs.
+
+### `pdes`
+
+Collection of convenience functions for solving common parabolic partial differential equations.
 
 ### `shooting`
 
