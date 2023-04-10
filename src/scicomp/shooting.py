@@ -95,7 +95,7 @@ def limit_cycle_shooting_func(
     f: Callable,
     phase_condition: Callable,
     ivp_solver: Callable = solve_ivp,
-    ivp_solver_kwargs: dict = None,
+    ivp_solver_kwargs: Optional[dict] = None,
     **ode_params,
 ) -> npt.ArrayLike:
     """Defines shooting function to fine the zeros of
@@ -127,7 +127,7 @@ def limit_cycle_shooting_func(
             f,
             t_span=(0, x[-1]),
             y0=x[:-1],
-            **ivp_solver_kwargs,  # type:ignore
+            **ivp_solver_kwargs,
             ode_params=ode_params,
         ).y[:, -1]
     )
