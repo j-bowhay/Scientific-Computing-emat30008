@@ -104,7 +104,7 @@ class TestContinuation:
             step_size=0.001,
             max_steps=4000,
             y0=[1.5],
-            root_finder_kwargs={"tol": 1e-12},
+            root_finder_kwargs={"tol": 1e-8},
             method="np",
         )
 
@@ -119,12 +119,14 @@ class TestContinuation:
             variable_kwarg="c",
             initial_value=-2,
             step_size=0.01,
-            max_steps=400,
+            max_steps=4000,
             y0=[1.5],
-            root_finder_kwargs={"tol": 1e-12},
+            root_finder_kwargs={"tol": 1e-8},
             method="ps-arc",
         )
 
         assert sol.parameter_values[0] == -2
+        # check pseudo arc length was able to get around the corner
+        assert sol.parameter_values[-1] > 30
         x = np.squeeze(sol.state_values)
         assert_allclose(x**3 - x + sol.parameter_values, 0, atol=1e-12)

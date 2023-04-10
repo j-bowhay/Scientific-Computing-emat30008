@@ -102,7 +102,7 @@ def numerical_continuation(
                 **fixed_kwargs,
                 **discretisation_kwargs,
             ),
-            x0=[y0],
+            x0=[augmented_param[-1][1:]],
             **root_finder_kwargs,
         )
         if sol.success:
