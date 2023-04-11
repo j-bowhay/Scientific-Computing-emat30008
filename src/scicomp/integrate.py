@@ -69,6 +69,8 @@ class _StepResult:
 
 
 class _RungeKuttaStep(ABC):
+    """Abstract base class used to builder stepper objects from."""
+
     @abstractproperty
     def A(self) -> np.ndarray:
         """The ``A`` matrix of the Butcher tableau"""
@@ -95,6 +97,7 @@ class _RungeKuttaStep(ABC):
         return None
 
     def __init__(self) -> None:
+        # Size of butcher tableau
         self.s = self.B.size
 
     def __call__(self, f: Callable, t: float, y: np.ndarray, h: float) -> _StepResult:
@@ -132,11 +135,13 @@ class _RungeKuttaStep(ABC):
         k = np.empty((y.size, self.s))
         # calculate k values
         for i in range(self.s):
+            # k_i = f(t + c_i*h, y + h * sum_{j=1}^{i-1} a_ij*k_j)
             k[:, i] = f(
                 t + self.C[i] * h,
                 y + h * np.sum(self.A[i, np.newaxis, : i + 1] * k[:, : i + 1], axis=-1),
             )
 
+        # y_{n+1} = y_n + h sum_{i=1}^s b_i*k_i
         y1 = y + h * np.inner(self.B, k)
 
         # return the error estimate if there is an embedded formula
@@ -308,7 +313,7 @@ class _RKF45Step(_RungeKuttaStep):
     B_hat = np.array([16 / 135, 0, 6656 / 12825, 28561 / 56430, -9 / 50, 2 / 55])
     B = np.array([25 / 216, 0, 1408 / 2565, 2197 / 4104, -1 / 5, 0])
     C = np.array([0, 1 / 4, 3 / 8, 12 / 13, 1, 1 / 2])
-    order = 5
+    order = 4
 
 
 class _CashKarpStep(_RungeKuttaStep):
@@ -329,7 +334,7 @@ class _CashKarpStep(_RungeKuttaStep):
     B_hat = np.array([37 / 378, 0, 250 / 621, 125 / 594, 0, 512 / 1771])
     B = np.array([2825 / 27648, 0, 18575 / 48384, 13525 / 55296, 277 / 14336, 1 / 4])
     C = np.array([0, 1 / 5, 3 / 10, 3 / 5, 1, 7 / 8])
-    order = 5
+    order = 4
 
 
 class _DomandPrinceStep(_RungeKuttaStep):
@@ -353,7 +358,7 @@ class _DomandPrinceStep(_RungeKuttaStep):
         [5179 / 57600, 0, 7571 / 16695, 393 / 640, -92097 / 339200, 187 / 2100, 1 / 40]
     )
     C = np.array([0, 1 / 5, 3 / 10, 4 / 5, 8 / 9, 1, 1])
-    order = 5
+    order = 4
 
 
 # =====================================================================================
@@ -675,7 +680,7 @@ def _estimate_initial_step_size(
 
 
 def solve_ivp(
-    f: Callable,
+    f: Callable[[float, np.ndarray], np.ndarray],
     *,
     y0: npt.ArrayLike,
     t_span: tuple[float, float],
@@ -704,7 +709,7 @@ def solve_ivp(
     Parameters
     ----------
     f : Callable
-        RHS function of the ODE. Must have signature ``f(t,y) -> array_like``. Any
+        RHS function of the ODE. Must have signature ``f(t,y,...) -> array_like``. Any
         parameters to the ODE should be handled by wrapping the ODE in a function or
         anonymous function
     y0 : npt.ArrayLike
