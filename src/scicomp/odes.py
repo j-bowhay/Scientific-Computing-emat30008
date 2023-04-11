@@ -168,7 +168,7 @@ def predator_prey(
     ]
 
 
-def modified_hopf(t: float, y: np.ndarray, beta: float) -> np.ndarray:
+def modified_hopf(t: float, y: np.ndarray, beta: float) -> npt.ArrayLike:
     r"""Ode for the modified hopf normal form
 
     .. math::

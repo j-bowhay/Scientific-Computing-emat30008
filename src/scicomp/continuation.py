@@ -92,7 +92,8 @@ def numerical_continuation(
     ContinuationResult
         Result object with the following attributes:
             state_value : np.ndarray
-                Value of the state vector at each corresponding value of `parameter_values`
+                Value of the state vector at each corresponding value of
+                `parameter_values`
             parameter_values : np.ndarray
 
 
