@@ -98,7 +98,9 @@ def limit_cycle_shooting_func(
     ivp_solver_kwargs: Optional[dict] = None,
     **ode_params,
 ) -> npt.ArrayLike:
-    """Defines shooting function to fine the zeros of
+    """Defines shooting function to find the zeros of. For use as a discretisation in
+    `scicomp.continuation.numerical_continuation`. To find limit cycles use the
+    convenience function `scicomp.shooting.find_limit_cycle`.
 
     Parameters
     ----------
@@ -162,9 +164,9 @@ def find_limit_cycle(
         The IVP solver to use, by default `scicomp.integrate.solve_ivp`
     root_finder : Callable, optional
         The root finder to use, by default `scipy.optimize.root`
-    ivp_solver_kwargs : Optional[dict], optional
+    ivp_solver_kwargs : dict, optional
         Keyword arguments to parse to the IVP solver, by default None
-    root_finder_kwargs : Optional[dict], optional
+    root_finder_kwargs : dict, optional
         Keyword arguments to parse to the root finder, by default None
     ode_params: dict, optional
         Keyword arguments to be passed to `f`
