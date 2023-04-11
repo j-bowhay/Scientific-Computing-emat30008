@@ -17,6 +17,15 @@ from scicomp.integrate import solve_ivp
 
 @dataclass
 class PDEResult:
+    """Results class for storing the solution of a PDE.
+
+    Has the following attributes:
+        t : np.ndarray
+            Time corresponding to the solution values
+        u : np.ndarray
+            Value of the solution at the grid points at times given by `t`
+    """
+
     t: np.ndarray
     u: np.ndarray
 
@@ -32,16 +41,58 @@ def solve_diffusion_method_lines(
     integrator: Callable = solve_ivp,
     integrator_kwargs: Optional[dict] = None,
 ) -> PDEResult:
+    """Solves the diffusion PDE with a source term using the method of lines. Uses
+    `scicomp.integrate.solve_ivp` to integrate the solution forward in time.
+    Configuration can be passed to the integrator using the `integrator_kwargs`
+    parameter. This can be used specify if Eulers method, Runge Kutta or adaptive step
+    sizing should be used.
+
+    ``u_tt = D u_xx + q(u,x,t)``
+
+    Parameters
+    ----------
+    grid : Grid
+        Grid object defining the domain and boundary conditions to solve the problem
+        over
+    D : float
+        Diffusion coefficient
+    u0_func : Callable
+        Function that describes the initial conditions of the problem. Must have
+        signature ``u0_func(x) -> np.ndarray``.
+    t_span : tuple
+        Time period to solve pde over
+    source_term : Callable, optional
+        Function that defines the source term of the PDE. Must have signature
+        ``source_term(u, t, x) -> np.ndarray``. Defaults to no source term.
+    integrator : Callable, optional
+        Function to use to integrate forwards in time, by default
+        `scicomp.integrate.solve_ivp`
+    integrator_kwargs : Optional, optional
+        Optional arguments to be passed to the integrator to control method and
+        tolerances etc, by default None
+
+    Returns
+    -------
+    PDEResult
+        Result object containing the solution to the PDE.
+        Has the following attributes:
+            t : np.ndarray
+                Time corresponding to the solution values
+            u : np.ndarray
+                Value of the solution at the grid points at times given by `t`
+    """
     integrator_kwargs = {} if integrator_kwargs is None else integrator_kwargs
 
     A = get_A_mat_from_BCs(2, grid=grid)
     b = get_b_vec_from_BCs(grid)
 
+    # method of lines discretisation
     def rhs(t, y):
         return (D / (grid.dx) ** 2) * (A @ y + b) + source_term(y, t, grid.x_inner)
 
     u0 = u0_func(grid.x_inner)
 
+    # integrate the solution forwards in time
     sol = integrator(rhs, y0=u0, t_span=t_span, **integrator_kwargs)
 
     return PDEResult(sol.t, apply_BCs_to_soln(sol.y.T, grid))
@@ -54,7 +105,40 @@ def solve_diffusion_implicit(
     steps: int,
     u0_func: Callable[[np.ndarray], np.ndarray],
     method: str = "crank-nicolson",
-) -> np.ndarray:
+) -> PDEResult:
+    """Solve the diffusion equation with a source term using implicit method (either
+    implicit Euler or Crank-Nicolson).
+
+    ``u_tt = D u_xx + q(x)``
+
+    Parameters
+    ----------
+    grid : Grid
+        Grid object defining the domain and boundary conditions to solve
+        the problem over
+    D : float
+        Diffusion coefficient
+    dt : float
+        Size of time step to take
+    steps : int
+        Number of time steps
+    u0_func : Callable
+        Function that describes the initial conditions of the problem.
+        Must have signature ``u0_func(x) -> np.ndarray``.
+    method : str, optional
+        Implicit method to use either "crank-nicolson" or "euler", by default
+        "crank-nicolson"
+
+    Returns
+    -------
+    PDEResult
+        Result object containing the solution to the PDE.
+        Has the following attributes:
+            t : np.ndarray
+                Time corresponding to the solution values
+            u : np.ndarray
+                Value of the solution at the grid points at times given by `t`
+    """
     if dt <= 0:
         raise ValueError("Invalid 'dt'")
     if steps <= 0:
@@ -71,17 +155,19 @@ def solve_diffusion_implicit(
     A = get_A_mat_from_BCs(2, grid=grid)
     b = get_b_vec_from_BCs(grid)
 
+    I = np.eye(*A.shape)  # type: ignore  # noqa: E741
+
     if method == "crank-nicolson":
-        lhs = np.eye(*A.shape) - 0.5 * C * A  # type: ignore
+        lhs = I - 0.5 * C * A
     else:
-        lhs = np.eye(*A.shape) - C * A  # type: ignore
+        lhs = I - C * A
 
     # step through time
     for i in range(1, steps + 1):
         if method == "crank-nicolson":
-            rhs = (np.eye(*A.shape) + 0.5 * C * A) @ u[i - 1, :] + C * b  # type: ignore
+            rhs = (I + 0.5 * C * A) @ u[i - 1, :] + C * b
         else:
             rhs = u[i - 1, :] + C * b
         u[i, :] = scipy.linalg.solve(lhs, rhs)
 
-    return apply_BCs_to_soln(u, grid=grid)
+    return PDEResult(dt * np.arange(steps + 1), apply_BCs_to_soln(u, grid=grid))

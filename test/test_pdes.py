@@ -38,7 +38,7 @@ class TestSolveLinearDiffusionImplicit:
     def test_sol_dirichlet(self, method):
         left_BC = right_BC = DirichletBC(0)
         grid = Grid(0, 1, 100, left_BC=left_BC, right_BC=right_BC)
-        u = solve_diffusion_implicit(
+        sol = solve_diffusion_implicit(
             grid=grid,
             D=0.1,
             dt=0.0001,
@@ -47,7 +47,7 @@ class TestSolveLinearDiffusionImplicit:
             method=method,
         )
 
-        assert_allclose(u[-1, 50], np.exp(-0.2 * np.pi**2), atol=1e-4)
+        assert_allclose(sol.u[-1, 50], np.exp(-0.2 * np.pi**2), atol=1e-4)
 
 
 class TestSolveDiffusionMethodLines:
