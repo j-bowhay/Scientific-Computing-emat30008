@@ -168,12 +168,13 @@ def predator_prey(
     ]
 
 
-def modified_hopf(t, y, beta):
+def modified_hopf(t: float, y: np.ndarray, beta: float) -> np.ndarray:
     r"""Ode for the modified hopf normal form
 
     .. math::
 
         \begin{align}
+        \newcommand{\diff}[2]{\frac{\mathrm{d}#1}{\mathrm{d}#2}}
         \diff{u_1}{t} &= \beta u_1 - u_2 + u_1\left(u_1^2 + u_2^2\right)
         - u_1\left(u_1^2 + u_2^2\right)^2,\\
         \diff{u_2}{t} &= u_1 + \beta u_2 + u_2\left(u_1^2 + u_2^2\right)
