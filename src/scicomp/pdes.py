@@ -35,9 +35,9 @@ def solve_diffusion_method_lines(
     D: float,
     u0_func: Callable[[np.ndarray], np.ndarray],
     t_span: tuple[float, float],
-    source_term: Callable[
+    q: Callable[
         [np.ndarray, float, np.ndarray], np.ndarray
-    ] = lambda u, t, x: np.zeros_like(x),
+    ] = lambda u, x, t: np.zeros_like(x),
     integrator: Callable = solve_ivp,
     integrator_kwargs: Optional[dict] = None,
 ) -> PDEResult:
@@ -61,9 +61,9 @@ def solve_diffusion_method_lines(
         signature ``u0_func(x) -> np.ndarray``.
     t_span : tuple
         Time period to solve pde over
-    source_term : Callable, optional
+    q : Callable, optional
         Function that defines the source term of the PDE. Must have signature
-        ``source_term(u, t, x) -> np.ndarray``. Defaults to no source term.
+        ``q(u, t, x) -> np.ndarray``. Defaults to no source term.
     integrator : Callable, optional
         Function to use to integrate forwards in time, by default
         `scicomp.integrate.solve_ivp`
@@ -88,7 +88,7 @@ def solve_diffusion_method_lines(
 
     # method of lines discretisation
     def rhs(t, y):
-        return (D / (grid.dx) ** 2) * (A @ y + b) + source_term(y, t, grid.x_inner)
+        return (D / (grid.dx) ** 2) * (A @ y + b) + q(y, grid.x_inner, t)
 
     u0 = u0_func(grid.x_inner)
 
