@@ -26,4 +26,4 @@ jobs:
       run: |
         pip install pytest
         pip install pytest-xdist
-        pytest -n auto -v .
+        pytest -n auto -v --doctest-modules
