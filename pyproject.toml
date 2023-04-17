@@ -21,6 +21,11 @@ dev = [
     "mypy",
 ]
 
+report = [
+    "notebook",
+    "SciencePlots"
+]
+
 [build-system]
 requires = ["setuptools>=43.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
