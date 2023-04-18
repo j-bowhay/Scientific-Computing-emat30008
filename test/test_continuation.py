@@ -74,7 +74,7 @@ class TestContinuation:
             )
 
     def test_invalid_method(self):
-        msg = "cheese is not a valid method. Valid methods are: \('ps-arc', 'np'\)"
+        msg = r"cheese is not a valid method. Valid methods are: \('ps-arc', 'np'\)"
         with pytest.raises(ValueError, match=msg):
             numerical_continuation(
                 eq,
