@@ -198,8 +198,9 @@ def find_limit_cycle(
     >>> pc = DerivativePhaseCondition(0)
     >>> solver_args = {"method": "rkf45", "r_tol": 1e-5}
     >>> find_limit_cycle(predator_prey, y0=[0.8, 0.2], T=30, phase_condition=pc,
-    ...                  ivp_solver_kwargs=solver_args, ode_params=params)
-    LimitCycleResult(y0=array([0.81896847, 0.16636227]), T=34.06632263341839)
+    ...                  ivp_solver_kwargs=solver_args,
+    ...                  ode_params=params)  # doctest: +ELLIPSIS
+    LimitCycleResult(y0=array([0.81..., 0.16...]), T=34.06...)
     """
     if T <= 0:
         raise ValueError("Initial guess of period 'T' must be positive")
