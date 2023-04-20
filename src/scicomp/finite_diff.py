@@ -198,16 +198,17 @@ def get_A_mat_from_BCs(derivative: int, grid: Grid) -> np.ndarray:
     np.ndarray
         Finite difference matrix
     """
-    if derivative != 2:
-        raise NotImplementedError
-
     left_BC = grid.left_BC
     right_BC = grid.right_BC
 
-    A = get_central_diff_matrix(grid.N_inner, derivative=2)
+    A = get_central_diff_matrix(grid.N_inner, derivative=derivative)
 
     if isinstance(left_BC, DirichletBC) and isinstance(right_BC, DirichletBC):
         return A
+    
+    # higher order derivates with non Dirichlet bcs aren't implemented
+    if derivative != 2:
+        raise NotImplementedError
 
     # Changes to the finite difference matrix are required based on the
     # boundary conditions
