@@ -182,7 +182,7 @@ class RobinBC(BoundaryCondition):
         self.gamma = gamma
 
 
-def get_A_mat_from_BCs(derivative: int, grid: Grid) -> np.ndarray:
+def get_A_mat_from_BCs(derivative: int, grid: Grid, sparse: bool = False) -> np.ndarray:
     """Generates finite difference matrix to solve PDE problems based on the boundary
     conditions.
 
@@ -192,6 +192,8 @@ def get_A_mat_from_BCs(derivative: int, grid: Grid) -> np.ndarray:
         Order of the derivative
     grid : Grid
         Grid object containing boundary conditions
+    sparse : bool
+        Whether to store A in a sparse format
 
     Returns
     -------
@@ -205,9 +207,9 @@ def get_A_mat_from_BCs(derivative: int, grid: Grid) -> np.ndarray:
 
     if isinstance(left_BC, DirichletBC) and isinstance(right_BC, DirichletBC):
         return A
-    
-    # higher order derivates with non Dirichlet bcs aren't implemented
-    if derivative != 2:
+
+    # higher order derivates and sparse matrices with non Dirichlet bcs aren't implemented
+    if derivative != 2 or sparse:
         raise NotImplementedError
 
     # Changes to the finite difference matrix are required based on the
