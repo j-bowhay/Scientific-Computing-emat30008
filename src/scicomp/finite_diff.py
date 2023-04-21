@@ -193,8 +193,7 @@ def get_A_mat_from_BCs(derivative: int, grid: Grid, sparse: bool = False) -> np.
     grid : Grid
         Grid object containing boundary conditions
     sparse : bool
-        Whether to store A in a sparse format. Only implemented for Dirichlet boundary
-        conditions.
+        Whether to store A in a sparse format.
 
     Returns
     -------
@@ -209,8 +208,8 @@ def get_A_mat_from_BCs(derivative: int, grid: Grid, sparse: bool = False) -> np.
     if isinstance(left_BC, DirichletBC) and isinstance(right_BC, DirichletBC):
         return A
 
-    # higher order derivates and sparse matrices with non Dirichlet bcs aren't implemented
-    if derivative != 2 or sparse:
+    # higher order derivates with non Dirichlet bcs aren't implemented
+    if derivative != 2:
         raise NotImplementedError
 
     # Changes to the finite difference matrix are required based on the

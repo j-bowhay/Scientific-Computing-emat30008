@@ -34,8 +34,7 @@ def solve_linear_poisson_eq(
     q : Callable[[np.ndarray], np.ndarray]
         Source term, must have signature ``q(x)``
     sparse : bool
-        Whether to use sparse linear algebra. Only implemented for Dirichlet boundary
-        conditions
+        Whether to use sparse linear algebra.
 
     Returns
     -------
