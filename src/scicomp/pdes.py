@@ -84,6 +84,25 @@ def solve_diffusion_method_lines(
                 Time corresponding to the solution values
             u : np.ndarray
                 Value of the solution at the grid points at times given by `t`
+
+    Examples
+    --------
+
+    In this example we will solve the dynamic Bratu problem. This is
+    :math:`u_t = D u_{xx} + e^{\mu u}`. We will take ``D = 1.0`` and :math:`\mu=0.1`
+    and use the boundary conditions ``u(0)=u(1)=0``.
+
+    >>> from scicomp.pdes import solve_diffusion_method_lines
+    >>> from scicomp.finite_diff import DirichletBC, Grid
+    >>> D = 1
+    >>> mu = 0.1
+    >>> left_bc = right_bc = DirichletBC(0)
+    >>> grid = Grid(a=0, b=1, N=20, left_BC=left_bc, right_BC=right_bc)
+    >>> solve_diffusion_method_lines(grid=grid, D=D,
+    ...                              u0_func=lambda x: np.zeros_like(x),
+    ...                              q=lambda u, x, t: np.exp(mu * u),
+    ...                              t_span=[0, 0.5])  # doctest: +ELLIPSIS
+    PDEResult(t=array(...), u=array(...))
     """
     integrator_kwargs = {} if integrator_kwargs is None else integrator_kwargs
 
