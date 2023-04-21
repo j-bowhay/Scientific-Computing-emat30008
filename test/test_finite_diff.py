@@ -1,17 +1,17 @@
 import numpy as np
 import pytest
+import scipy
 from numpy.testing import assert_allclose, assert_equal
 from scicomp.finite_diff import (
-    get_central_diff_matrix,
-    Grid,
     DirichletBC,
+    Grid,
     NeumannBC,
     RobinBC,
+    apply_BCs_to_soln,
     get_A_mat_from_BCs,
     get_b_vec_from_BCs,
-    apply_BCs_to_soln,
+    get_central_diff_matrix,
 )
-import scipy
 
 
 class TestGetCentralDiffMatrix:

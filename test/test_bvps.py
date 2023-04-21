@@ -1,6 +1,6 @@
 import numpy as np
-from numpy.testing import assert_allclose
 import pytest
+from numpy.testing import assert_allclose
 from scicomp.bvps import solve_linear_poisson_eq, solve_nonlinear_poisson_eq
 from scicomp.finite_diff import DirichletBC, Grid, NeumannBC, RobinBC
 

@@ -105,6 +105,24 @@ def solve_nonlinear_poisson_eq(
     -------
     np.ndarray
         Solution to the non-linear poisson equation
+
+    Examples
+    --------
+
+    In this example we will solve the steady state Bratu problem which is
+    :math:`D u_{xx} + e^{\mu u} = 0`, where `D=1`, :math:`\mu=0.1` and with the
+    boundary conditions `u(0)=u(1)=0`.
+
+    >>> from scicomp.finite_diff import DirichletBC, Grid
+    >>> from scicomp.bvps import solve_nonlinear_poisson_eq
+    >>> D = 1
+    >>> mu = 0.1
+    >>> left_bc = right_bc = DirichletBC(0)
+    >>> grid = Grid(a=0, b=1, N=10, left_BC=left_bc, right_BC=right_bc)
+    >>> solve_nonlinear_poisson_eq(u0=np.ones_like(grid.x_inner), grid=grid, D=D,
+    ...                            q=lambda u, x: np.exp(mu * u))  # doctest: +ELLIPSIS
+    array([0.        , 0.049..., 0.087... , 0.112..., 0.124...,
+           0.124..., 0.112..., 0.087... , 0.049..., 0.        ])
     """
     root_finder_kwargs = {} if root_finder_kwargs is None else root_finder_kwargs
 

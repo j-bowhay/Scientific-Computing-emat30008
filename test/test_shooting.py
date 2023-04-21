@@ -1,8 +1,7 @@
 import numpy as np
 import pytest
-from scicomp.odes import hopf_normal
+from scicomp.odes import hopf_normal, modified_hopf
 from scicomp.shooting import DerivativePhaseCondition, find_limit_cycle
-from scicomp.odes import modified_hopf
 
 
 class TestFindLimitCycle:
