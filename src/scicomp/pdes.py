@@ -64,7 +64,7 @@ def solve_diffusion_method_lines(
         Time period to solve pde over
     q : Callable, optional
         Function that defines the source term of the PDE. Must have signature
-        ``q(u, t, x) -> np.ndarray``. Defaults to no source term.
+        ``q(u, x, t) -> np.ndarray``. Defaults to no source term.
     integrator : Callable, optional
         Function to use to integrate forwards in time, by default
         `scicomp.integrate.solve_ivp`
@@ -107,13 +107,16 @@ def solve_diffusion_implicit(
     dt: float,
     steps: int,
     u0_func: Callable[[np.ndarray], np.ndarray],
+    q: Callable[
+        [np.ndarray, float, np.ndarray], np.ndarray
+    ] = lambda u, x, t: np.zeros_like(x),
     method: str = "crank-nicolson",
     sparse: bool = False,
 ) -> PDEResult:
     """Solve the diffusion equation with a source term using implicit method (either
     implicit Euler or Crank-Nicolson).
 
-    ``u_tt = D u_xx + q(x)``
+    ``u_tt = D u_xx + q(x,t,u)``
 
     Parameters
     ----------
@@ -129,6 +132,11 @@ def solve_diffusion_implicit(
     u0_func : Callable
         Function that describes the initial conditions of the problem.
         Must have signature ``u0_func(x) -> np.ndarray``.
+    q : Callable, optional
+        Function that defines the source term of the PDE. Must have signature
+        ``q(u, x, t) -> np.ndarray``. If the source term contains ``u`` then the source
+        term is calculated explicitly while the rest of the problem is calculated
+        implicitly (IMEX). Defaults to no source term.
     method : str, optional
         Implicit method to use either "crank-nicolson" or "euler", by default
         "crank-nicolson"
@@ -177,6 +185,9 @@ def solve_diffusion_implicit(
             rhs = (I + 0.5 * C * A) @ u[i - 1, :] + C * b
         else:
             rhs = u[i - 1, :] + C * b
+        # add source term
+        rhs += dt * q(u[i - 1, :], grid.x_inner, i * dt)
+
         if sparse:
             u[i, :] = scipy.sparse.linalg.spsolve(lhs, rhs)
         else:
