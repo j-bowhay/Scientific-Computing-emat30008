@@ -47,7 +47,7 @@ class TestGrid:
     def test_grid_dirichlet(self):
         left_bc = right_bc = DirichletBC(0)
 
-        grid = Grid(10, 20, 100, left_BC=left_bc, right_BC=right_bc)
+        grid = Grid(a=10, b=20, N=100, left_BC=left_bc, right_BC=right_bc)
 
         assert grid.a == 10
         assert grid.b == 20
@@ -60,7 +60,7 @@ class TestGrid:
         left_bc = DirichletBC(0)
         right_bc = RobinBC(8, 9)
 
-        grid = Grid(10, 20, 100, left_BC=left_bc, right_BC=right_bc)
+        grid = Grid(a=10, b=20, N=100, left_BC=left_bc, right_BC=right_bc)
 
         assert grid.a == 10
         assert grid.b == 20
@@ -73,8 +73,8 @@ class TestGrid:
 class TestGetAMat:
     def test_dirichlet(self):
         left_bc = right_bc = DirichletBC(0)
-        grid = Grid(10, 20, 6, left_BC=left_bc, right_BC=right_bc)
-        A = get_A_mat_from_BCs(2, grid, sparse=True)
+        grid = Grid(a=10, b=20, N=6, left_BC=left_bc, right_BC=right_bc)
+        A = get_A_mat_from_BCs(2, grid=grid, sparse=True)
 
         assert scipy.sparse.issparse(A)
         A = A.toarray()
@@ -86,8 +86,8 @@ class TestGetAMat:
 
     def test_neumann(self):
         left_bc = right_bc = NeumannBC(0)
-        grid = Grid(10, 20, 4, left_BC=left_bc, right_BC=right_bc)
-        A = get_A_mat_from_BCs(2, grid, sparse=True)
+        grid = Grid(a=10, b=20, N=4, left_BC=left_bc, right_BC=right_bc)
+        A = get_A_mat_from_BCs(2, grid=grid, sparse=True)
 
         assert scipy.sparse.issparse(A)
         A = A.toarray()
@@ -99,8 +99,8 @@ class TestGetAMat:
 
     def test_robin(self):
         left_bc = right_bc = RobinBC(10, 5)
-        grid = Grid(10, 20, 4, left_BC=left_bc, right_BC=right_bc)
-        A = get_A_mat_from_BCs(2, grid, sparse=True)
+        grid = Grid(a=10, b=20, N=4, left_BC=left_bc, right_BC=right_bc)
+        A = get_A_mat_from_BCs(2, grid=grid, sparse=True)
 
         assert scipy.sparse.issparse(A)
         A = A.toarray()
@@ -119,9 +119,9 @@ class TestGetAMat:
 class TestGetBVec:
     def test_dirichlet(self):
         left_bc = right_bc = DirichletBC(10)
-        grid = Grid(10, 20, 6, left_BC=left_bc, right_BC=right_bc)
+        grid = Grid(a=10, b=20, N=6, left_BC=left_bc, right_BC=right_bc)
 
-        b = get_b_vec_from_BCs(grid)
+        b = get_b_vec_from_BCs(grid=grid)
         expected = np.zeros_like(grid.x_inner)
         expected[0] = 10
         expected[-1] = 10
@@ -131,9 +131,9 @@ class TestGetBVec:
     def test_dirichlet_neumann(self):
         left_bc = DirichletBC(10)
         right_bc = NeumannBC(20)
-        grid = Grid(10, 20, 6, left_BC=left_bc, right_BC=right_bc)
+        grid = Grid(a=10, b=20, N=6, left_BC=left_bc, right_BC=right_bc)
 
-        b = get_b_vec_from_BCs(grid)
+        b = get_b_vec_from_BCs(grid=grid)
         expected = np.zeros_like(grid.x_inner)
         expected[0] = 10
         expected[-1] = 2 * 20 * grid.dx
@@ -142,9 +142,9 @@ class TestGetBVec:
     def test_robin_dirichlet(self):
         left_bc = RobinBC(10, 5)
         right_bc = DirichletBC(20)
-        grid = Grid(10, 20, 6, left_BC=left_bc, right_BC=right_bc)
+        grid = Grid(a=10, b=20, N=6, left_BC=left_bc, right_BC=right_bc)
 
-        b = get_b_vec_from_BCs(grid)
+        b = get_b_vec_from_BCs(grid=grid)
         expected = np.zeros_like(grid.x_inner)
         expected[-1] = 20
         expected[0] = -2 * 10 * grid.dx
@@ -154,7 +154,7 @@ class TestGetBVec:
 class TestApplyBCsToSol:
     def test_dirichlet(self):
         left_bc = right_bc = DirichletBC(10)
-        grid = Grid(10, 20, 1, left_BC=left_bc, right_BC=right_bc)
+        grid = Grid(a=10, b=20, N=1, left_BC=left_bc, right_BC=right_bc)
 
         sol = apply_BCs_to_soln(np.array([1]), grid=grid)
         assert_equal(sol, np.array([10, 1, 10]))
@@ -162,7 +162,7 @@ class TestApplyBCsToSol:
     def test_dirichlet_neumann(self):
         left_bc = DirichletBC(10)
         right_bc = NeumannBC(20)
-        grid = Grid(10, 20, 6, left_BC=left_bc, right_BC=right_bc)
+        grid = Grid(a=10, b=20, N=6, left_BC=left_bc, right_BC=right_bc)
 
         sol = apply_BCs_to_soln(np.array([1]), grid=grid)
         assert_equal(sol, np.array([10, 1]))
@@ -170,7 +170,7 @@ class TestApplyBCsToSol:
     def test_robin_dirichlet(self):
         left_bc = RobinBC(10, 5)
         right_bc = DirichletBC(20)
-        grid = Grid(10, 20, 6, left_BC=left_bc, right_BC=right_bc)
+        grid = Grid(a=10, b=20, N=6, left_BC=left_bc, right_BC=right_bc)
 
         sol = apply_BCs_to_soln(np.array([1]), grid=grid)
         assert_equal(sol, np.array([1, 20]))

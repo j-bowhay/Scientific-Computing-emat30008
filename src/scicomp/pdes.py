@@ -31,6 +31,7 @@ class PDEResult:
 
 
 def solve_diffusion_method_lines(
+    *,
     grid: Grid,
     D: float,
     u0_func: Callable[[np.ndarray], np.ndarray],
@@ -87,7 +88,7 @@ def solve_diffusion_method_lines(
     integrator_kwargs = {} if integrator_kwargs is None else integrator_kwargs
 
     A = get_A_mat_from_BCs(2, grid=grid, sparse=sparse)
-    b = get_b_vec_from_BCs(grid)
+    b = get_b_vec_from_BCs(grid=grid)
 
     # method of lines discretisation
     def rhs(t, y):
@@ -98,10 +99,11 @@ def solve_diffusion_method_lines(
     # integrate the solution forwards in time
     sol = integrator(rhs, y0=u0, t_span=t_span, **integrator_kwargs)
 
-    return PDEResult(sol.t, apply_BCs_to_soln(sol.y.T, grid))
+    return PDEResult(sol.t, apply_BCs_to_soln(sol.y.T, grid=grid))
 
 
 def solve_diffusion_implicit(
+    *,
     grid: Grid,
     D: float,
     dt: float,
@@ -167,7 +169,7 @@ def solve_diffusion_implicit(
     u[0, :] = u0_func(grid.x_inner)
 
     A = get_A_mat_from_BCs(2, grid=grid, sparse=sparse)
-    b = get_b_vec_from_BCs(grid)
+    b = get_b_vec_from_BCs(grid=grid)
 
     if sparse:
         I = scipy.sparse.identity(b.shape[0])

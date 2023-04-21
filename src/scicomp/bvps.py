@@ -14,6 +14,7 @@ from scicomp.finite_diff import (
 
 
 def solve_linear_poisson_eq(
+    *,
     grid: Grid,
     D: float,
     q: Callable[[np.ndarray], np.ndarray],
@@ -43,7 +44,7 @@ def solve_linear_poisson_eq(
     """
     # generate finite difference matrix
     A = D * get_A_mat_from_BCs(2, grid=grid, sparse=sparse)
-    b = get_b_vec_from_BCs(grid)
+    b = get_b_vec_from_BCs(grid=grid)
     rhs = -D * b - (grid.dx**2) * q(grid.x_inner)
 
     if sparse:
@@ -55,6 +56,7 @@ def solve_linear_poisson_eq(
 
 
 def solve_nonlinear_poisson_eq(
+    *,
     u0: np.ndarray,
     grid: Grid,
     D: float,

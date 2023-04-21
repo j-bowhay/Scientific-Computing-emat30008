@@ -8,7 +8,7 @@ from scicomp.pdes import solve_diffusion_implicit, solve_diffusion_method_lines
 class TestSolveLinearDiffusionImplicit:
     def test_invalid_dt(self):
         left_BC = right_BC = DirichletBC(0)
-        grid = Grid(0, 1, 100, left_BC=left_BC, right_BC=right_BC)
+        grid = Grid(a=0, b=1, N=100, left_BC=left_BC, right_BC=right_BC)
 
         msg = "Invalid 'dt'"
         with pytest.raises(ValueError, match=msg):
@@ -22,7 +22,7 @@ class TestSolveLinearDiffusionImplicit:
 
     def test_invalid_steps(self):
         left_BC = right_BC = DirichletBC(0)
-        grid = Grid(0, 1, 100, left_BC=left_BC, right_BC=right_BC)
+        grid = Grid(a=0, b=1, N=100, left_BC=left_BC, right_BC=right_BC)
 
         msg = "Invalid 'steps'"
         with pytest.raises(ValueError, match=msg):
@@ -38,7 +38,7 @@ class TestSolveLinearDiffusionImplicit:
     @pytest.mark.parametrize("sparse", ["True", "False"])
     def test_sol_dirichlet(self, method, sparse):
         left_BC = right_BC = DirichletBC(0)
-        grid = Grid(0, 1, 100, left_BC=left_BC, right_BC=right_BC)
+        grid = Grid(a=0, b=1, N=100, left_BC=left_BC, right_BC=right_BC)
         sol = solve_diffusion_implicit(
             grid=grid,
             D=0.1,
@@ -59,10 +59,14 @@ class TestSolveDiffusionMethodLines:
         a = 0
         b = 1
         left_BC = right_BC = DirichletBC(0)
-        grid = Grid(a, b, 30, left_BC, right_BC)
+        grid = Grid(a=a, b=b, N=30, left_BC=left_BC, right_BC=right_BC)
 
         sol = solve_diffusion_method_lines(
-            grid, D, lambda x: np.sin(np.pi * x), t_span=(0, 0.1), sparse=sparse
+            grid=grid,
+            D=D,
+            u0_func=lambda x: np.sin(np.pi * x),
+            t_span=(0, 0.1),
+            sparse=sparse,
         )
 
         expected = np.exp(-D * np.pi**2 * sol.t[-1]) * np.sin(np.pi * grid.x)

@@ -63,7 +63,7 @@ class TestSolveLinearPoissonEquation:
     def test_zero_BC(self, sparse):
         left_BC = DirichletBC(0)
         right_BC = DirichletBC(0)
-        grid = Grid(0, 1, 10, left_BC=left_BC, right_BC=right_BC)
+        grid = Grid(a=0, b=1, N=10, left_BC=left_BC, right_BC=right_BC)
 
         sol = solve_linear_poisson_eq(grid=grid, D=1, q=lambda x: 0, sparse=sparse)
         assert_allclose(sol, np.zeros_like(sol))
@@ -71,14 +71,14 @@ class TestSolveLinearPoissonEquation:
     def test_neumann(self):
         left_BC = DirichletBC(10)
         right_BC = NeumannBC(5)
-        grid = Grid(0, 1, N=11, left_BC=left_BC, right_BC=right_BC)
+        grid = Grid(a=0, b=1, N=11, left_BC=left_BC, right_BC=right_BC)
         sol = solve_linear_poisson_eq(grid=grid, D=1, q=lambda x: 0)
         x = grid.x
         assert_allclose(sol, 5 * x + 10)
 
         left_BC = NeumannBC(5)
         right_BC = DirichletBC(10)
-        grid = Grid(0, 1, N=11, left_BC=left_BC, right_BC=right_BC)
+        grid = Grid(a=0, b=1, N=11, left_BC=left_BC, right_BC=right_BC)
         sol = solve_linear_poisson_eq(grid=grid, D=1, q=lambda x: 0)
         x = grid.x
         assert_allclose(sol, 5 * x + 5)
@@ -86,14 +86,14 @@ class TestSolveLinearPoissonEquation:
     def test_robin(self):
         left_BC = DirichletBC(1)
         right_BC = RobinBC(5, -3)
-        grid = Grid(0, 1, N=11, left_BC=left_BC, right_BC=right_BC)
+        grid = Grid(a=0, b=1, N=11, left_BC=left_BC, right_BC=right_BC)
         sol = solve_linear_poisson_eq(grid=grid, D=1, q=lambda x: 0)
         x = grid.x
         assert_allclose(sol, -4 * x + 1)
 
         left_BC = RobinBC(5, -3)
         right_BC = DirichletBC(1)
-        grid = Grid(0, 1, N=11, left_BC=left_BC, right_BC=right_BC)
+        grid = Grid(a=0, b=1, N=11, left_BC=left_BC, right_BC=right_BC)
         sol = solve_linear_poisson_eq(grid=grid, D=1, q=lambda x: 0)
         x = grid.x
         assert_allclose(sol, 2 * x - 1, atol=1e-12)

@@ -46,6 +46,7 @@ def get_central_diff_matrix(
 class Grid:
     def __init__(
         self,
+        *,
         a: float,
         b: float,
         N: int,
@@ -182,7 +183,9 @@ class RobinBC(BoundaryCondition):
         self.gamma = gamma
 
 
-def get_A_mat_from_BCs(derivative: int, grid: Grid, sparse: bool = False) -> np.ndarray:
+def get_A_mat_from_BCs(
+    derivative: int, *, grid: Grid, sparse: bool = False
+) -> np.ndarray:
     """Generates finite difference matrix to solve PDE problems based on the boundary
     conditions.
 
@@ -229,7 +232,7 @@ def get_A_mat_from_BCs(derivative: int, grid: Grid, sparse: bool = False) -> np.
     return A
 
 
-def get_b_vec_from_BCs(grid: Grid) -> np.ndarray:
+def get_b_vec_from_BCs(*, grid: Grid) -> np.ndarray:
     """Get boundary condition vector based on `grid`.
 
     Parameters
@@ -265,7 +268,7 @@ def get_b_vec_from_BCs(grid: Grid) -> np.ndarray:
     return b
 
 
-def apply_BCs_to_soln(inner_sol: np.ndarray, grid: Grid) -> np.ndarray:
+def apply_BCs_to_soln(inner_sol: np.ndarray, *, grid: Grid) -> np.ndarray:
     """Applies the value of Dirichlet Boundary conditions to a solution
 
     Parameters
