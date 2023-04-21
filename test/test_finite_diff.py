@@ -1,7 +1,15 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose, assert_equal
-from scicomp.finite_diff import get_central_diff_matrix, Grid, DirichletBC, RobinBC
+from scicomp.finite_diff import (
+    get_central_diff_matrix,
+    Grid,
+    DirichletBC,
+    NeumannBC,
+    RobinBC,
+    get_A_mat_from_BCs,
+)
+import scipy
 
 
 class TestGetCentralDiffMatrix:
@@ -34,7 +42,7 @@ class TestGetCentralDiffMatrix:
 
 
 class TestGrid:
-    def test_grid_dirchlet(self):
+    def test_grid_dirichlet(self):
         left_bc = right_bc = DirichletBC(0)
 
         grid = Grid(10, 20, 100, left_BC=left_bc, right_BC=right_bc)
@@ -46,7 +54,7 @@ class TestGrid:
         assert grid.dx == 10 / 99
         assert_equal(grid.x_inner, grid.x[1:-1])
 
-    def test_grid_dirchlet_robin(self):
+    def test_grid_dirichlet_robin(self):
         left_bc = DirichletBC(0)
         right_bc = RobinBC(8, 9)
 
@@ -58,3 +66,49 @@ class TestGrid:
         assert grid.N_inner == 99
         assert grid.dx == 10 / 99
         assert_equal(grid.x_inner, grid.x[1:])
+
+
+class TestGetAMat:
+    def test_dirichlet(self):
+        left_bc = right_bc = DirichletBC(0)
+        grid = Grid(10, 20, 6, left_BC=left_bc, right_BC=right_bc)
+        A = get_A_mat_from_BCs(2, grid, sparse=True)
+
+        assert scipy.sparse.issparse(A)
+        A = A.toarray()
+
+        expected = np.array(
+            [[-2, 1, 0, 0], [1, -2, 1, 0], [0, 1, -2, 1], [0, 0, 1, -2]]
+        )
+        assert_equal(A, expected)
+
+    def test_neumann(self):
+        left_bc = right_bc = NeumannBC(0)
+        grid = Grid(10, 20, 4, left_BC=left_bc, right_BC=right_bc)
+        A = get_A_mat_from_BCs(2, grid, sparse=True)
+
+        assert scipy.sparse.issparse(A)
+        A = A.toarray()
+
+        expected = np.array(
+            [[-2, 2, 0, 0], [1, -2, 1, 0], [0, 1, -2, 1], [0, 0, 2, -2]]
+        )
+        assert_equal(A, expected)
+
+    def test_robin(self):
+        left_bc = right_bc = RobinBC(10, 5)
+        grid = Grid(10, 20, 4, left_BC=left_bc, right_BC=right_bc)
+        A = get_A_mat_from_BCs(2, grid, sparse=True)
+
+        assert scipy.sparse.issparse(A)
+        A = A.toarray()
+
+        expected = np.array(
+            [
+                [-2 + 2 * grid.dx * 5, 2, 0, 0],
+                [1, -2, 1, 0],
+                [0, 1, -2, 1],
+                [0, 0, 2, -2 - 2 * grid.dx * 5],
+            ]
+        )
+        assert_equal(A, expected)
