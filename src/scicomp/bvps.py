@@ -80,7 +80,7 @@ def solve_nonlinear_poisson_eq(
         Source term, must have signature ``q(u,x)``
     root_finder_kwargs : dict, optional
         Keyword arguments to pass to the root finder
-    sparse: bool
+    sparse : bool
         Whether to use sparse linear algebra
 
     Returns

@@ -40,6 +40,7 @@ def solve_diffusion_method_lines(
     ] = lambda u, x, t: np.zeros_like(x),
     integrator: Callable = solve_ivp,
     integrator_kwargs: Optional[dict] = None,
+    sparse: bool = False,
 ) -> PDEResult:
     """Solves the diffusion PDE with a source term using the method of lines. Uses
     `scicomp.integrate.solve_ivp` to integrate the solution forward in time.
@@ -70,6 +71,8 @@ def solve_diffusion_method_lines(
     integrator_kwargs : Optional, optional
         Optional arguments to be passed to the integrator to control method and
         tolerances etc, by default None
+    sparse : bool
+        Whether to use sparse linear algebra
 
     Returns
     -------
@@ -83,7 +86,7 @@ def solve_diffusion_method_lines(
     """
     integrator_kwargs = {} if integrator_kwargs is None else integrator_kwargs
 
-    A = get_A_mat_from_BCs(2, grid=grid)
+    A = get_A_mat_from_BCs(2, grid=grid, sparse=sparse)
     b = get_b_vec_from_BCs(grid)
 
     # method of lines discretisation
@@ -105,6 +108,7 @@ def solve_diffusion_implicit(
     steps: int,
     u0_func: Callable[[np.ndarray], np.ndarray],
     method: str = "crank-nicolson",
+    sparse: bool = False,
 ) -> PDEResult:
     """Solve the diffusion equation with a source term using implicit method (either
     implicit Euler or Crank-Nicolson).
@@ -128,6 +132,8 @@ def solve_diffusion_implicit(
     method : str, optional
         Implicit method to use either "crank-nicolson" or "euler", by default
         "crank-nicolson"
+    sparse : bool
+        Whether to use sparse linear algebra
 
     Returns
     -------
@@ -152,10 +158,13 @@ def solve_diffusion_implicit(
     u = np.empty((steps + 1, grid.N_inner))
     u[0, :] = u0_func(grid.x_inner)
 
-    A = get_A_mat_from_BCs(2, grid=grid)
+    A = get_A_mat_from_BCs(2, grid=grid, sparse=sparse)
     b = get_b_vec_from_BCs(grid)
 
-    I = np.eye(*A.shape)  # type: ignore  # noqa: E741
+    if sparse:
+        I = scipy.sparse.identity(b.shape[0])
+    else:
+        I = np.eye(*A.shape)  # type: ignore  # noqa: E741
 
     if method == "crank-nicolson":
         lhs = I - 0.5 * C * A
@@ -168,6 +177,9 @@ def solve_diffusion_implicit(
             rhs = (I + 0.5 * C * A) @ u[i - 1, :] + C * b
         else:
             rhs = u[i - 1, :] + C * b
-        u[i, :] = scipy.linalg.solve(lhs, rhs)
+        if sparse:
+            u[i, :] = scipy.sparse.linalg.spsolve(lhs, rhs)
+        else:
+            u[i, :] = scipy.linalg.solve(lhs, rhs)
 
     return PDEResult(dt * np.arange(steps + 1), apply_BCs_to_soln(u, grid=grid))

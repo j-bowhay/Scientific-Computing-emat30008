@@ -35,7 +35,8 @@ class TestSolveLinearDiffusionImplicit:
             )
 
     @pytest.mark.parametrize("method", ["euler", "crank-nicolson"])
-    def test_sol_dirichlet(self, method):
+    @pytest.mark.parametrize("sparse", ["True", "False"])
+    def test_sol_dirichlet(self, method, sparse):
         left_BC = right_BC = DirichletBC(0)
         grid = Grid(0, 1, 100, left_BC=left_BC, right_BC=right_BC)
         sol = solve_diffusion_implicit(
@@ -45,13 +46,15 @@ class TestSolveLinearDiffusionImplicit:
             steps=20000,
             u0_func=lambda x: np.sin(np.pi * x),
             method=method,
+            sparse=sparse,
         )
 
         assert_allclose(sol.u[-1, 50], np.exp(-0.2 * np.pi**2), atol=1e-4)
 
 
 class TestSolveDiffusionMethodLines:
-    def test_sol_dirichlet(self):
+    @pytest.mark.parametrize("sparse", ["True", "False"])
+    def test_sol_dirichlet(self, sparse):
         D = 1
         a = 0
         b = 1
@@ -59,7 +62,7 @@ class TestSolveDiffusionMethodLines:
         grid = Grid(a, b, 30, left_BC, right_BC)
 
         sol = solve_diffusion_method_lines(
-            grid, D, lambda x: np.sin(np.pi * x), t_span=(0, 0.1)
+            grid, D, lambda x: np.sin(np.pi * x), t_span=(0, 0.1), sparse=sparse
         )
 
         expected = np.exp(-D * np.pi**2 * sol.t[-1]) * np.sin(np.pi * grid.x)
