@@ -38,7 +38,7 @@ def get_central_diff_matrix(
     offsets = list(range(-k, k + 1))
     diags = [weights[i] * np.ones(n - abs(offset)) for i, offset in enumerate(offsets)]
 
-    A = scipy.sparse.diags(diags, offsets)
+    A = scipy.sparse.diags(diags, offsets, format="csr")
 
     return A if sparse else A.toarray()
 
@@ -193,7 +193,8 @@ def get_A_mat_from_BCs(derivative: int, grid: Grid, sparse: bool = False) -> np.
     grid : Grid
         Grid object containing boundary conditions
     sparse : bool
-        Whether to store A in a sparse format
+        Whether to store A in a sparse format. Only implemented for Dirichlet boundary
+        conditions.
 
     Returns
     -------
@@ -203,7 +204,7 @@ def get_A_mat_from_BCs(derivative: int, grid: Grid, sparse: bool = False) -> np.
     left_BC = grid.left_BC
     right_BC = grid.right_BC
 
-    A = get_central_diff_matrix(grid.N_inner, derivative=derivative)
+    A = get_central_diff_matrix(grid.N_inner, derivative=derivative, sparse=sparse)
 
     if isinstance(left_BC, DirichletBC) and isinstance(right_BC, DirichletBC):
         return A

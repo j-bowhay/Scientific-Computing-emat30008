@@ -17,6 +17,7 @@ def solve_linear_poisson_eq(
     grid: Grid,
     D: float,
     q: Callable[[np.ndarray], np.ndarray],
+    sparse: bool = False,
 ) -> np.ndarray:
     r"""Convenience function for solving the linear poisson equation.
 
@@ -28,14 +29,13 @@ def solve_linear_poisson_eq(
     ----------
     grid : Grid
         Discretisation of the domain
-    left_BC : BoundaryCondition
-        Boundary condition at the left of the domain
-    right_BC : BoundaryCondition
-        Boundary condition at the right of the domain
     D : float
         Coefficient of diffusivity
     q : Callable[[np.ndarray], np.ndarray]
         Source term, must have signature ``q(x)``
+    sparse : bool
+        Whether to use sparse linear algebra. Only implemented for Dirichlet boundary
+        conditions
 
     Returns
     -------
@@ -43,11 +43,14 @@ def solve_linear_poisson_eq(
         Solution to the linear poisson equation
     """
     # generate finite difference matrix
-    A = D * get_A_mat_from_BCs(2, grid=grid)
+    A = D * get_A_mat_from_BCs(2, grid=grid, sparse=sparse)
     b = get_b_vec_from_BCs(grid)
     rhs = -D * b - (grid.dx**2) * q(grid.x_inner)
 
-    u_inner = scipy.linalg.solve(A, rhs).squeeze()
+    if sparse:
+        u_inner = scipy.sparse.linalg.spsolve(A, rhs).squeeze()
+    else:
+        u_inner = scipy.linalg.solve(A, rhs).squeeze()
 
     return apply_BCs_to_soln(u_inner, grid=grid)
 
@@ -71,10 +74,6 @@ def solve_nonlinear_poisson_eq(
         Initial guess at the solution
     grid : Grid
         Discretisation of the domain
-    left_BC : BoundaryCondition
-        Boundary condition at the left of the domain
-    right_BC : BoundaryCondition
-        Boundary condition at the right of the domain
     D : float
         Coefficient of diffusivity
     q : Callable[[np.ndarray, np.ndarray], np.ndarray]

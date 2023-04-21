@@ -1,11 +1,13 @@
 import numpy as np
 from numpy.testing import assert_allclose
+import pytest
 from scicomp.bvps import solve_linear_poisson_eq, solve_nonlinear_poisson_eq
 from scicomp.finite_diff import DirichletBC, Grid, NeumannBC, RobinBC
 
 
 class TestSolveLinearPoissonEquation:
-    def test_no_source(self):
+    @pytest.mark.parametrize("sparse", [True, False])
+    def test_no_source(self, sparse):
         D = 1
         a = 0
         b = 10
@@ -16,7 +18,7 @@ class TestSolveLinearPoissonEquation:
         right_BC = DirichletBC(gamma_2)
         grid = Grid(a=a, b=b, N=100, left_BC=left_BC, right_BC=right_BC)
 
-        sol = solve_linear_poisson_eq(grid=grid, D=D, q=lambda x: 0)
+        sol = solve_linear_poisson_eq(grid=grid, D=D, q=lambda x: 0, sparse=sparse)
 
         assert sol.size == 100
 
@@ -28,7 +30,8 @@ class TestSolveLinearPoissonEquation:
         expected = ((gamma_2 - gamma_1) / (b - a)) * (grid.x - a) + gamma_1
         assert_allclose(sol, expected)
 
-    def test_source(self):
+    @pytest.mark.parametrize("sparse", [True, False])
+    def test_source(self, sparse):
         D = 15
         a = 0
         b = 10
@@ -39,7 +42,7 @@ class TestSolveLinearPoissonEquation:
         right_BC = DirichletBC(gamma_2)
         grid = Grid(a=a, b=b, N=100, left_BC=left_BC, right_BC=right_BC)
 
-        sol = solve_linear_poisson_eq(grid=grid, D=D, q=lambda x: 1)
+        sol = solve_linear_poisson_eq(grid=grid, D=D, q=lambda x: 1, sparse=sparse)
 
         assert sol.size == 100
 
@@ -56,12 +59,13 @@ class TestSolveLinearPoissonEquation:
         )
         assert_allclose(sol, expected)
 
-    def test_zero_BC(self):
+    @pytest.mark.parametrize("sparse", [True, False])
+    def test_zero_BC(self, sparse):
         left_BC = DirichletBC(0)
         right_BC = DirichletBC(0)
         grid = Grid(0, 1, 10, left_BC=left_BC, right_BC=right_BC)
 
-        sol = solve_linear_poisson_eq(grid=grid, D=1, q=lambda x: 0)
+        sol = solve_linear_poisson_eq(grid=grid, D=1, q=lambda x: 0, sparse=sparse)
         assert_allclose(sol, np.zeros_like(sol))
 
     def test_neumann(self):
@@ -93,9 +97,6 @@ class TestSolveLinearPoissonEquation:
         sol = solve_linear_poisson_eq(grid=grid, D=1, q=lambda x: 0)
         x = grid.x
         assert_allclose(sol, 2 * x - 1, atol=1e-12)
-
-
-TestSolveLinearPoissonEquation().test_neumann()
 
 
 class TestSolveNonLinearPoissonEquation:
