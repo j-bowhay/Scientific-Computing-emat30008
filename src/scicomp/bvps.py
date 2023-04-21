@@ -41,6 +41,22 @@ def solve_linear_poisson_eq(
     -------
     np.ndarray
         Solution to the linear poisson equation
+
+    Examples
+    --------
+
+    In this example we will solve Laplace's equation on the domain ``0<=x<=1`` with
+    boundary conditions ``u(0)=0`` and ``u(1)=1``.
+
+    >>> from scicomp.finite_diff import DirichletBC, Grid
+    >>> from scicomp.bvps import solve_linear_poisson_eq
+    >>> D=1
+    >>> left_bc = DirichletBC(0)
+    >>> right_bc = DirichletBC(10)
+    >>> grid = Grid(a=0, b=1, N=10, left_BC=left_bc, right_BC=right_bc)
+    >>> solve_linear_poisson_eq(grid=grid, D=D, q=lambda x: np.ones_like(x))  # doctest: +ELLIPSIS
+    array([ 0.        ,  1.160...,  2.308...,  3.444...,  4.567...,
+            5.679...,  6.777...,  7.864...,  8.938... , 10.        ])
     """
     # generate finite difference matrix
     A = D * get_A_mat_from_BCs(2, grid=grid, sparse=sparse)
