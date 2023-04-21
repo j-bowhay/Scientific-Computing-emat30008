@@ -76,4 +76,4 @@ max-complexity = 10
 "*.py" = ["B023"]
 
 [tool.black]
-extend-exclude = "**.ipynb"
+extend-exclude = "report/report.ipynb"

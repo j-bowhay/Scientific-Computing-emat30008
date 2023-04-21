@@ -245,19 +245,7 @@ def get_b_vec_from_BCs(grid: Grid) -> np.ndarray:
     left_BC = grid.left_BC
     right_BC = grid.right_BC
 
-    # Number of equations depends on the type of boundary condition
-    if isinstance(left_BC, DirichletBC) and isinstance(right_BC, DirichletBC):
-        b = np.zeros_like(grid.x_inner)
-    elif (
-        isinstance(left_BC, DirichletBC) and isinstance(right_BC, (NeumannBC, RobinBC))
-    ) or (
-        isinstance(right_BC, DirichletBC) and isinstance(left_BC, (NeumannBC, RobinBC))
-    ):
-        b = np.zeros((grid.N_inner, 1))
-    elif isinstance(left_BC, (NeumannBC, RobinBC)) and isinstance(
-        right_BC, (NeumannBC, RobinBC)
-    ):
-        b = np.zeros_like(grid.x)
+    b = np.zeros_like(grid.x_inner)
 
     # Value of b depends on the boundary conditions
     if isinstance(left_BC, DirichletBC):

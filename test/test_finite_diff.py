@@ -8,6 +8,7 @@ from scicomp.finite_diff import (
     NeumannBC,
     RobinBC,
     get_A_mat_from_BCs,
+    get_b_vec_from_BCs,
 )
 import scipy
 
@@ -112,3 +113,38 @@ class TestGetAMat:
             ]
         )
         assert_equal(A, expected)
+
+
+class TestGetBVec:
+    def test_dirichlet(self):
+        left_bc = right_bc = DirichletBC(10)
+        grid = Grid(10, 20, 6, left_BC=left_bc, right_BC=right_bc)
+
+        b = get_b_vec_from_BCs(grid)
+        expected = np.zeros_like(grid.x_inner)
+        expected[0] = 10
+        expected[-1] = 10
+
+        assert_equal(b, expected)
+
+    def test_dirichlet_neumann(self):
+        left_bc = DirichletBC(10)
+        right_bc = NeumannBC(20)
+        grid = Grid(10, 20, 6, left_BC=left_bc, right_BC=right_bc)
+
+        b = get_b_vec_from_BCs(grid)
+        expected = np.zeros_like(grid.x_inner)
+        expected[0] = 10
+        expected[-1] = 2 * 20 * grid.dx
+        assert_equal(b, expected)
+
+    def test_robin_dirichlet(self):
+        left_bc = RobinBC(10, 5)
+        right_bc = DirichletBC(20)
+        grid = Grid(10, 20, 6, left_BC=left_bc, right_BC=right_bc)
+
+        b = get_b_vec_from_BCs(grid)
+        expected = np.zeros_like(grid.x_inner)
+        expected[-1] = 20
+        expected[0] = -2 * 10 * grid.dx
+        assert_equal(b, expected)
