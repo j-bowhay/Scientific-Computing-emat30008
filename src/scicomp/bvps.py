@@ -61,6 +61,7 @@ def solve_nonlinear_poisson_eq(
     D: float,
     q: Callable[[np.ndarray, np.ndarray], np.ndarray],
     root_finder_kwargs: Optional[dict] = None,
+    sparse: bool = False,
 ) -> np.ndarray:
     r"""Convenience function for solving the non-linear poisson equation.
 
@@ -78,6 +79,10 @@ def solve_nonlinear_poisson_eq(
         Coefficient of diffusivity
     q : Callable[[np.ndarray, np.ndarray], np.ndarray]
         Source term, must have signature ``q(u,x)``
+    root_finder_kwargs : dict, optional
+        Keyword arguments to pass to the root finder
+    sparse: bool
+        Whether to use sparse linear algebra
 
     Returns
     -------
@@ -87,7 +92,7 @@ def solve_nonlinear_poisson_eq(
     root_finder_kwargs = {} if root_finder_kwargs is None else root_finder_kwargs
 
     # generate finite difference matrix
-    A = get_A_mat_from_BCs(2, grid=grid)
+    A = get_A_mat_from_BCs(2, grid=grid, sparse=sparse)
     b = get_b_vec_from_BCs(grid=grid)
 
     # function to find the root of

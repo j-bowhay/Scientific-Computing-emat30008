@@ -102,7 +102,8 @@ class TestSolveLinearPoissonEquation:
 class TestSolveNonLinearPoissonEquation:
     # Currently only has tests with linear source terms as these are easier to find
     # analytical solutions to
-    def test_no_source(self):
+    @pytest.mark.parametrize("sparse", [True, False])
+    def test_no_source(self, sparse):
         D = 1
         a = 0
         b = 10
@@ -115,10 +116,7 @@ class TestSolveNonLinearPoissonEquation:
         grid = Grid(a=a, b=b, N=N, left_BC=left_BC, right_BC=right_BC)
 
         sol = solve_nonlinear_poisson_eq(
-            u0=np.ones((N - 2)),
-            grid=grid,
-            D=D,
-            q=lambda u, x: 0,
+            u0=np.ones((N - 2)), grid=grid, D=D, q=lambda u, x: 0, sparse=sparse
         )
 
         assert sol.size == 100
@@ -131,7 +129,8 @@ class TestSolveNonLinearPoissonEquation:
         expected = ((gamma_2 - gamma_1) / (b - a)) * (grid.x - a) + gamma_1
         assert_allclose(sol, expected)
 
-    def test_source(self):
+    @pytest.mark.parametrize("sparse", [True, False])
+    def test_source(self, sparse):
         D = 15
         a = 0
         b = 10
@@ -144,10 +143,7 @@ class TestSolveNonLinearPoissonEquation:
         grid = Grid(a=a, b=b, N=N, left_BC=left_BC, right_BC=right_BC)
 
         sol = solve_nonlinear_poisson_eq(
-            u0=np.ones((N - 2, 1)),
-            grid=grid,
-            D=D,
-            q=lambda u, x: 1,
+            u0=np.ones((N - 2, 1)), grid=grid, D=D, q=lambda u, x: 1, sparse=sparse
         )
 
         assert sol.size == 100
