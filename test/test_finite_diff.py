@@ -9,6 +9,7 @@ from scicomp.finite_diff import (
     RobinBC,
     get_A_mat_from_BCs,
     get_b_vec_from_BCs,
+    apply_BCs_to_soln,
 )
 import scipy
 
@@ -148,3 +149,28 @@ class TestGetBVec:
         expected[-1] = 20
         expected[0] = -2 * 10 * grid.dx
         assert_equal(b, expected)
+
+
+class TestApplyBCsToSol:
+    def test_dirichlet(self):
+        left_bc = right_bc = DirichletBC(10)
+        grid = Grid(10, 20, 1, left_BC=left_bc, right_BC=right_bc)
+
+        sol = apply_BCs_to_soln(np.array([1]), grid=grid)
+        assert_equal(sol, np.array([10, 1, 10]))
+
+    def test_dirichlet_neumann(self):
+        left_bc = DirichletBC(10)
+        right_bc = NeumannBC(20)
+        grid = Grid(10, 20, 6, left_BC=left_bc, right_BC=right_bc)
+
+        sol = apply_BCs_to_soln(np.array([1]), grid=grid)
+        assert_equal(sol, np.array([10, 1]))
+
+    def test_robin_dirichlet(self):
+        left_bc = RobinBC(10, 5)
+        right_bc = DirichletBC(20)
+        grid = Grid(10, 20, 6, left_BC=left_bc, right_BC=right_bc)
+
+        sol = apply_BCs_to_soln(np.array([1]), grid=grid)
+        assert_equal(sol, np.array([1, 20]))
