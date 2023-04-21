@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose
-from scicomp.finite_diff import get_central_diff_matrix
+from numpy.testing import assert_allclose, assert_equal
+from scicomp.finite_diff import get_central_diff_matrix, Grid, DirichletBC, RobinBC
 
 
 class TestGetCentralDiffMatrix:
@@ -31,3 +31,30 @@ class TestGetCentralDiffMatrix:
         msg = "Matrix must be at least 5*5"
         with pytest.raises(ValueError, match=msg):
             get_central_diff_matrix(2, derivative=2, points=5)
+
+
+class TestGrid:
+    def test_grid_dirchlet(self):
+        left_bc = right_bc = DirichletBC(0)
+
+        grid = Grid(10, 20, 100, left_BC=left_bc, right_BC=right_bc)
+
+        assert grid.a == 10
+        assert grid.b == 20
+        assert grid.N == 100
+        assert grid.N_inner == 98
+        assert grid.dx == 10 / 99
+        assert_equal(grid.x_inner, grid.x[1:-1])
+
+    def test_grid_dirchlet_robin(self):
+        left_bc = DirichletBC(0)
+        right_bc = RobinBC(8, 9)
+
+        grid = Grid(10, 20, 100, left_BC=left_bc, right_BC=right_bc)
+
+        assert grid.a == 10
+        assert grid.b == 20
+        assert grid.N == 100
+        assert grid.N_inner == 99
+        assert grid.dx == 10 / 99
+        assert_equal(grid.x_inner, grid.x[1:])
