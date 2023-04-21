@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 from scicomp.odes import hopf_normal
 from scicomp.shooting import DerivativePhaseCondition, find_limit_cycle
+from scicomp.odes import modified_hopf
 
 
 class TestFindLimitCycle:
@@ -28,5 +29,19 @@ class TestFindLimitCycle:
             phase_condition=pc,
             ivp_solver_kwargs=solver_args,
             ode_params={"beta": beta, "rho": rho},
+        )
+        np.testing.assert_allclose(res.T, 2 * np.pi, rtol=1e-6)
+
+    def test_find_modified_hopf_period(self):
+        pc = DerivativePhaseCondition(0)
+
+        solver_args = {"r_tol": 1e-6}
+        res = find_limit_cycle(
+            modified_hopf,
+            y0=[1, -1],
+            T=5,
+            phase_condition=pc,
+            ode_params={"beta": 1},
+            ivp_solver_kwargs=solver_args,
         )
         np.testing.assert_allclose(res.T, 2 * np.pi, rtol=1e-6)
