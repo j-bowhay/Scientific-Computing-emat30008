@@ -129,7 +129,7 @@ def solve_diffusion_implicit(
     steps: int,
     u0_func: Callable[[np.ndarray], np.ndarray],
     q: Callable[
-        [np.ndarray, float, np.ndarray], np.ndarray
+        [np.ndarray, np.ndarray, float], np.ndarray
     ] = lambda u, x, t: np.zeros_like(x),
     method: str = "crank-nicolson",
     sparse: bool = False,
@@ -210,7 +210,7 @@ def solve_diffusion_implicit(
     b = get_b_vec_from_BCs(grid=grid)
 
     if sparse:
-        I = scipy.sparse.identity(b.shape[0])
+        I = scipy.sparse.identity(b.shape[0])  # noqa: E741
     else:
         I = np.eye(*A.shape)  # type: ignore  # noqa: E741
 

@@ -57,7 +57,7 @@ def solve_linear_poisson_eq(
     >>> solve_linear_poisson_eq(grid=grid, D=D, q=lambda x: np.ones_like(x))  # doctest: +ELLIPSIS
     array([ 0.        ,  1.160...,  2.308...,  3.444...,  4.567...,
             5.679...,  6.777...,  7.864...,  8.938... , 10.        ])
-    """
+    """  # noqa: E501
     # generate finite difference matrix
     A = D * get_A_mat_from_BCs(2, grid=grid, sparse=sparse)
     b = get_b_vec_from_BCs(grid=grid)

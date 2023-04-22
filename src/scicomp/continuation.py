@@ -115,7 +115,7 @@ def numerical_continuation(
     ...                        step_size=0.1, max_steps=5, y0=[1.5],
     ...                        root_finder_kwargs={"tol": 1e-8}, method="ps-arc")  # doctest: +ELLIPSIS
     ContinuationResult(state_values=array([[1.431..., 1.411..., 1.390..., 1.369..., 1.347...]]), parameter_values=array([-1.5       , -1.4       , -1.300..., -1.200..., -1.1008...]))
-    """
+    """  # noqa: E501
     fixed_kwargs = {} if fixed_kwargs is None else fixed_kwargs
     root_finder_kwargs = {} if root_finder_kwargs is None else root_finder_kwargs
     discretisation_kwargs = (
