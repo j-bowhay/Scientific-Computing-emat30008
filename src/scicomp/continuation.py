@@ -167,7 +167,7 @@ def numerical_continuation(
     if method == "np":
         steps = max_steps - 1  # first step already taken
     elif method == "ps-arc":
-        # need to do an iteration of natural parameter continuation
+        # need to do another iteration of natural parameter continuation
         # to find initial secant
         steps = 1
 
