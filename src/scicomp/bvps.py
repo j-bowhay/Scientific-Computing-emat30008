@@ -17,14 +17,14 @@ def solve_linear_poisson_eq(
     *,
     grid: Grid,
     D: float,
-    q: Callable[[np.ndarray], np.ndarray],
+    q: Callable[[np.ndarray], np.ndarray] = lambda x: np.zeros_like(x),
     sparse: bool = False,
 ) -> np.ndarray:
     r"""Convenience function for solving the linear poisson equation.
 
     .. math::
 
-        D \frac{du}{dx} + q(x) = 0
+        D \frac{d^2u}{dx^2} + q(x) = 0
 
     Parameters
     ----------
@@ -32,9 +32,9 @@ def solve_linear_poisson_eq(
         Discretisation of the domain
     D : float
         Coefficient of diffusivity
-    q : Callable[[np.ndarray], np.ndarray]
-        Source term, must have signature ``q(x)``
-    sparse : bool
+    q : Callable, optional
+        Source term, must have signature ``q(x)``. Defaults to no source term.
+    sparse : bool, optional
         Whether to use sparse linear algebra.
 
     Returns
@@ -54,9 +54,9 @@ def solve_linear_poisson_eq(
     >>> left_bc = DirichletBC(0)
     >>> right_bc = DirichletBC(10)
     >>> grid = Grid(a=0, b=1, N=10, left_BC=left_bc, right_BC=right_bc)
-    >>> solve_linear_poisson_eq(grid=grid, D=D, q=lambda x: np.ones_like(x))  # doctest: +ELLIPSIS
-    array([ 0.        ,  1.160...,  2.308...,  3.444...,  4.567...,
-            5.679...,  6.777...,  7.864...,  8.938... , 10.        ])
+    >>> solve_linear_poisson_eq(grid=grid, D=D)
+    array([ 0.        ,  1.11111111,  2.22222222,  3.33333333,  4.44444444,
+            5.55555556,  6.66666667,  7.77777778,  8.88888889, 10.        ])
     """  # noqa: E501
     # generate finite difference matrix
     A = D * get_A_mat_from_BCs(2, grid=grid, sparse=sparse)
@@ -76,7 +76,7 @@ def solve_nonlinear_poisson_eq(
     u0: np.ndarray,
     grid: Grid,
     D: float,
-    q: Callable[[np.ndarray, np.ndarray], np.ndarray],
+    q: Callable[[np.ndarray, np.ndarray], np.ndarray] = lambda u, x: np.zeros_like(x),
     root_finder_kwargs: Optional[dict] = None,
     sparse: bool = False,
 ) -> np.ndarray:
@@ -84,7 +84,7 @@ def solve_nonlinear_poisson_eq(
 
     .. math::
 
-        D \frac{du}{dx} + q(u,x) = 0
+        D \frac{d^2u}{dx^2} + q(u,x) = 0
 
     Parameters
     ----------
@@ -94,11 +94,11 @@ def solve_nonlinear_poisson_eq(
         Discretisation of the domain
     D : float
         Coefficient of diffusivity
-    q : Callable[[np.ndarray, np.ndarray], np.ndarray]
-        Source term, must have signature ``q(u,x)``
+    q : Callable, optional
+        Source term, must have signature ``q(u,x)``. Defaults to no source term.
     root_finder_kwargs : dict, optional
         Keyword arguments to pass to the root finder
-    sparse : bool
+    sparse : bool, optional
         Whether to use sparse linear algebra
 
     Returns
