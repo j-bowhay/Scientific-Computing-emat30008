@@ -35,7 +35,7 @@ def solve_linear_poisson_eq(
     q : Callable, optional
         Source term, must have signature ``q(x)``. Defaults to no source term.
     sparse : bool, optional
-        Whether to use sparse linear algebra.
+        Whether to use sparse linear algebra. Defaults to False.
 
     Returns
     -------
@@ -99,7 +99,7 @@ def solve_nonlinear_poisson_eq(
     root_finder_kwargs : dict, optional
         Keyword arguments to pass to the root finder
     sparse : bool, optional
-        Whether to use sparse linear algebra
+        Whether to use sparse linear algebra. Defaults to False.
 
     Returns
     -------

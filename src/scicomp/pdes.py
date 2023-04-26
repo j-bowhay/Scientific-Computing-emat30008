@@ -72,8 +72,8 @@ def solve_diffusion_method_lines(
     integrator_kwargs : Optional, optional
         Optional arguments to be passed to the integrator to control method and
         tolerances etc, by default None
-    sparse : bool
-        Whether to use sparse linear algebra
+    sparse : bool, optional
+        Whether to use sparse linear algebra. Defaults to False.
 
     Returns
     -------
@@ -161,8 +161,8 @@ def solve_diffusion_implicit(
     method : str, optional
         Implicit method to use either "crank-nicolson" or "euler", by default
         "crank-nicolson"
-    sparse : bool
-        Whether to use sparse linear algebra
+    sparse : bool, optional
+        Whether to use sparse linear algebra. Defaults to False.
 
     Returns
     -------
