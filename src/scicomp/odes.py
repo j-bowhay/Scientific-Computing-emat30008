@@ -12,9 +12,9 @@ def zero_ode(t: float, y: np.ndarray) -> np.ndarray:
     Parameters
     ----------
     t : float
-        Time to evaluate at.
+        Time
     y : np.ndarray
-        State to evaluate at.
+        Current state
 
     Returns
     -------
