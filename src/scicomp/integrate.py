@@ -423,7 +423,7 @@ def _richardson_error_estimate(
     y: np.ndarray,
     h: float,
     method: _RungeKuttaStep,
-) -> tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, float]:
     """Error estimate for solving from ``y_n`` to ``y_n+1`` using Richardson
     extrapolation.
 
@@ -442,8 +442,10 @@ def _richardson_error_estimate(
 
     Returns
     -------
-    tuple[np.ndarray, float]
-        Solution of the ODE at the next timestep and estimated error in getting there
+    y1 : np.ndarrray
+        Solution of the ODE at the next timestep
+    err : float
+        estimated error in getting to `y1` from previous step
     """
     # take two small steps to find y1
     y1 = y
@@ -493,11 +495,6 @@ def _solve_to_adaptive(
     -------
     ODEResult
         The solution to the ODE
-
-    Raises
-    ------
-    RuntimeError
-        Raised if no step size satisfies the error criteria
     """
     fac_max = 1.5
     fac_min = 0.5
@@ -664,14 +661,12 @@ def solve_ivp(
     estimate.
 
     `h` is optional if operating as in modes (2) or (3) as a suitable initial step
-    size will be determined algorithmically.
+    size will be determined algorithmically if `h` is not provided.
 
     Parameters
     ----------
     f : Callable
-        RHS function of the ODE. Must have signature ``f(t,y,...) -> array_like``. Any
-        parameters to the ODE should be handled by wrapping the ODE in a function or
-        anonymous function
+        RHS function of the ODE. Must have signature ``f(t,y,...) -> array_like``.
     y0 : npt.ArrayLike
         Initial conditions
     t_span : tuple[float, float]
@@ -722,9 +717,9 @@ def solve_ivp(
     -------
     ODEResult
         Results object with the following attributes:
-            - ``y``: np.ndarray
+            y: np.ndarray
                 Solution at t.
-            - ``t``: np.ndarray
+            t: np.ndarray
                 Time correspond to the solution.
 
     Examples
