@@ -67,7 +67,7 @@ class DerivativePhaseCondition(PhaseCondition):
         Parameters
         ----------
         component : int
-            Which component of the derivate to set to zero.
+            Which component of the derivative to set to zero.
         """
         self.component = component
 
@@ -106,12 +106,12 @@ def limit_cycle_shooting_func(
     ----------
     x : np.ndarray
         Current augmented solution vector
-    ivp_solver : Callable
-        Solver to integrate the ODE
     f : Callable
         ODE to find limit cycle of
     phase_condition : Callable
         Phase condition to isolate limit cycle
+    ivp_solver : Callable
+        Solver to integrate the ODE
     ivp_solver_kwargs : dict
         Options to pass to the ODE solver
 
