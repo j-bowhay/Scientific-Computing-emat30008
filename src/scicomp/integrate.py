@@ -31,7 +31,7 @@ def _scale(r_tol: float, a_tol: float, *args) -> np.ndarray:
     """
     if len(args) > 1:
         # Take maximum of input args to avoid near division by zero later on
-        y = np.maximum(*tuple(map(np.abs, args)))
+        y = np.amax(np.abs(args), axis=0)
     else:
         y = np.abs(args[0])
     return a_tol + y * r_tol
