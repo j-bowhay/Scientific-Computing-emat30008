@@ -60,14 +60,6 @@ def _error_norm(x: np.ndarray, /) -> float:
 # Standard Runge Kutta Type Steps
 
 
-@dataclass
-class _StepResult:
-    """Used internally to store the result of a Runge Kutta step."""
-
-    y: np.ndarray
-    error_estimate: Optional[np.ndarray] = None
-
-
 class _RungeKuttaStep(ABC):
     """Abstract base class used to builder stepper objects from."""
 
@@ -100,7 +92,9 @@ class _RungeKuttaStep(ABC):
         # Size of butcher tableau
         self.s = self.B.size
 
-    def __call__(self, f: Callable, t: float, y: np.ndarray, h: float) -> _StepResult:
+    def __call__(
+        self, f: Callable, t: float, y: np.ndarray, h: float
+    ) -> tuple[np.ndarray, Optional[float]]:
         r"""Computes one step of the ode ``y' = f(t,y)``.
 
         Based on the following equation,
@@ -128,9 +122,10 @@ class _RungeKuttaStep(ABC):
 
         Returns
         -------
-        _StepResult
-            Result object containing the next value for `y` and the error estimate if
-            integrator has one.
+        y1 : np.ndarrya
+            Result object containing the next value for `y`
+        err: float
+            error estimate if integrator has one.
         """
         k = np.empty((y.size, self.s))
         # calculate k values
@@ -146,8 +141,8 @@ class _RungeKuttaStep(ABC):
 
         # return the error estimate if there is an embedded formula
         if self.B_hat is not None:
-            return _StepResult(y1, h * np.inner(self.B - self.B_hat, k))
-        return _StepResult(y1)
+            return y1, h * np.inner(self.B - self.B_hat, k)
+        return y1, None
 
 
 class _EulerStep(_RungeKuttaStep):
@@ -417,7 +412,7 @@ def _solve_to_fixed_step(
         if (t[-1] + h - t_span[-1]) > 0:
             h = t_span[-1] - t[-1]
         t.append(t[-1] + h)
-        y.append(method(f, t[-1], y[-1], h).y)
+        y.append(method(f, t[-1], y[-1], h)[0])
 
     return ODEResult(np.asarray(y).T, np.asarray(t))
 
@@ -453,49 +448,14 @@ def _richardson_error_estimate(
     # take two small steps to find y1
     y1 = y
     for i in range(2):
-        y1 = method(f, t + i * h, y1, h / 2).y
+        y1 = method(f, t + i * h, y1, h / 2)[0]
     # take one large step two find w
-    w = method(f, t, y, h).y
+    w = method(f, t, y, h)[0]
 
     # eq 4.4 page 165 Hairer Solving ODEs 1
     local_err = (y1 - w) / (2**method.order - 1)
 
     return y1, local_err
-
-
-def _embedded_error_estimate(
-    f: Callable,
-    t: float,
-    y: np.ndarray,
-    h: float,
-    method: _RungeKuttaStep,
-) -> tuple[np.ndarray, np.ndarray]:
-    """Error estimate for solving from ``y_n`` to ``y_n+1`` using the steppers
-    embedded error estimate.
-
-    Parameters
-    ----------
-    f : Callable
-        RHS of the ODE
-    t : float
-        Time of current state occurs at
-    y : np.ndarray
-        Current state of the ODE
-    h : float
-        Step size
-    method : _RungeKuttaStep
-        Stepper to use for integration
-
-    Returns
-    -------
-    tuple[np.ndarray, float]
-        Solution of the ODE at the next timestep and estimated error in getting there
-    """
-    step = method(f, t, y, h)
-    y1 = step.y
-    local_err = step.error_estimate
-
-    return y1, local_err  # type:ignore
 
 
 def _solve_to_adaptive(
@@ -507,7 +467,6 @@ def _solve_to_adaptive(
     r_tol: float,
     a_tol: float,
     max_step: float,
-    error_estimate: Callable,
 ) -> ODEResult:
     """Private function for solving ODE using an adaptive timestep.
 
@@ -529,8 +488,6 @@ def _solve_to_adaptive(
         The absolute error tolerance
     max_step : float
         Maximum allowable step size to take
-    error_estimate : Callable
-        Function to use as the error estimate
 
     Returns
     -------
@@ -555,7 +512,10 @@ def _solve_to_adaptive(
     while (t[-1] - t_span[-1]) < 0:
         step_accepted = False
         while not step_accepted:
-            y1, local_err = error_estimate(f, t[-1], y[-1], h, method)
+            if type(method) in _fixed_step_methods.values():
+                y1, local_err = _richardson_error_estimate(f, t[-1], y[-1], h, method)
+            else:
+                y1, local_err = method(f, t[-1], y[-1], h)  # type: ignore
 
             scale = _scale(r_tol, a_tol, y1, y[-1])
             err = _error_norm(local_err / scale)
@@ -661,7 +621,7 @@ def _estimate_initial_step_size(
         h0 = 0.01 * (d0 / d1)
 
     # step c
-    y1 = _EulerStep()(f, t0, y0, h0).y
+    y1 = _EulerStep()(f, t0, y0, h0)[0]
 
     # step d
     diff = f(t0 + h0, y1) - f(t0, y0)
@@ -878,10 +838,6 @@ def solve_ivp(
         # run in fixed mode
         res = _solve_to_fixed_step(f_wrapper, y0, t_span, h, method_step)
     else:
-        if method in _fixed_step_methods:
-            err_estimate = _richardson_error_estimate
-        else:
-            err_estimate = _embedded_error_estimate
         res = _solve_to_adaptive(
             f_wrapper,
             y0,
@@ -891,6 +847,5 @@ def solve_ivp(
             r_tol,
             a_tol,
             max_step,
-            err_estimate,
         )
     return res
