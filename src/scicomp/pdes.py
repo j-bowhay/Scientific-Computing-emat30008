@@ -37,7 +37,7 @@ def solve_diffusion_method_lines(
     u0_func: Callable[[np.ndarray], np.ndarray],
     t_span: tuple[float, float],
     q: Callable[
-        [np.ndarray, float, np.ndarray], np.ndarray
+        [np.ndarray, np.ndarray, float], np.ndarray
     ] = lambda u, x, t: np.zeros_like(x),
     integrator: Callable = solve_ivp,
     integrator_kwargs: Optional[dict] = None,
