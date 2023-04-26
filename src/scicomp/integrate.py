@@ -122,7 +122,7 @@ class _RungeKuttaStep(ABC):
 
         Returns
         -------
-        y1 : np.ndarrya
+        y1 : np.ndarray
             Result object containing the next value for `y`
         err: float
             error estimate if integrator has one.
