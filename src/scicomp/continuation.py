@@ -28,9 +28,6 @@ class ContinuationResult:
     parameter_values: np.ndarray
 
 
-_valid_methods = ["ps-arc", "np"]
-
-
 def numerical_continuation(
     equation: Callable[[np.ndarray], np.ndarray],
     *,
@@ -141,10 +138,8 @@ def numerical_continuation(
     if not callable(discretisation):
         raise ValueError("'discretisation' must be callable")
 
-    if method not in _valid_methods:
-        raise ValueError(
-            f"{method} is not a valid method. Valid methods are: {*_valid_methods,}"
-        )
+    if method not in ["ps-arc", "np"]:
+        raise ValueError(f"{method} is not a valid method.")
 
     # Initial starting point
     initial_sol = root(
